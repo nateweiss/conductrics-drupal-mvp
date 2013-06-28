@@ -1,0 +1,138 @@
+<?php
+/**
+* @file
+* Bean plugin for showing tweets for a specified twitter user
+*/
+
+/**
+* Implements hook_bean_types_api_info().
+*/
+function conductrics_1_bean_types_api_info() {
+	return array('api' => 4);
+}
+
+/**
+* Implements hook_init().
+*/
+function conductrics_1_init() {
+	drupal_add_css(drupal_get_path('module', 'conductrics_1') .'/assets/conductrics-experience.css'); // best to remain first (pre-hides elements to avoid 'flicker')
+	drupal_add_js(drupal_get_path('module', 'conductrics_1') .'/assets/conductrics.jquery.js'); // relies on jquery
+	drupal_add_js(drupal_get_path('module', 'conductrics_1') .'/assets/conductrics-experience.js'); // relies on conductrics.jquery
+}
+
+/**
+* Implements hook_bean_types().
+*/
+function conductrics_1_bean_types() {
+	$plugins = array();
+	$plugins['conductrics_block'] = array(
+		'label' => t('Conductrics Block'), //note this appears as the Heading when creating a new block of this type
+		'description' => t('Container for a Conductrics test or targeting/optimization.'),
+		'handler' => array(
+			'class' => 'ConductricsBlockBean',
+			'parent' => 'bean',
+			'path' => drupal_get_path('module', 'conductrics_1') . '/plugins/bean',
+			'file' => 'conductrics_1.conductrics_block.inc',
+		),
+	);
+	return $plugins;
+}
+
+/**
+* Implements hook_menu().
+*/
+function conductrics_1_menu() {
+  $items = array();
+
+  $items['admin/config/content/conductrics_1'] = array(
+    'title' => 'Conductrics',
+    'description' => 'Provide your Conductrics account details here',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('conductrics_1_admin'),
+    'access arguments' => array('administer conductrics_1 settings'),
+    'type' => MENU_NORMAL_ITEM,
+   );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function conductrics_1_theme() {
+  $items = array();
+  $items['agent_experience'] = array(
+    'arguments' => array(
+      'entities' => NULL,
+      'view_mode'  => NULL,
+      'agent_code' => NULL,
+      'choice_code' => NULL,
+    ),
+    'file' => 'conductrics_1.theme.inc',
+  );
+  $items['agent_experience_child'] = array(
+    'arguments' => array(
+      'entity' => NULL,
+      'view_mode'  => NULL,
+    ),
+    'file' => 'conductrics_1.theme.inc',
+  );
+  return $items;
+}
+
+function conductrics_1_admin() {
+	$form = array();
+
+	$form['conductrics_owner_code'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Owner Code'),
+		'#default_value' => variable_get('conductrics_owner_code', ''),
+		'#size' => 30,
+		'#maxlength' => 50,
+		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'owner')"),
+		'#required' => TRUE,
+	);
+
+	$form['conductrics_api_key'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Runtime API Key'),
+		'#default_value' => variable_get('conductrics_api_key', ''),
+		'#size' => 30,
+		'#maxlength' => 50,
+		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'api')"),
+		'#required' => TRUE,
+	);
+
+	$form['conductrics_admin_key'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Admin API Key'),
+		'#default_value' => variable_get('conductrics_admin_key', ''),
+		'#size' => 30,
+		'#maxlength' => 50,
+		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'admin')"),
+		'#required' => TRUE,
+	);
+
+	$form['conductrics_api_url'] = array(
+		'#type' => 'textfield',
+		'#title' => t('API Server URL'),
+		'#default_value' => variable_get('conductrics_api_url', 'https://api.conductrics.com'),
+		'#size' => 30,
+		'#maxlength' => 50,
+		'#description' => t("Adjust this URL only if using a custom server from Conductrics."),
+		'#required' => FALSE,
+	);
+
+	$form['conductrics_console_url'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Console URL'),
+		'#default_value' => variable_get('conductrics_console_url', 'https://console.conductrics.com'),
+		'#size' => 30,
+		'#maxlength' => 50,
+		'#description' => t("Adjust this URL only if using a custom server from Conductrics."),
+		'#required' => FALSE,
+	);
+
+	return system_settings_form($form);
+}
+

@@ -1,0 +1,5 @@
+name = Conductrics 1
+description = Provides content testing, targeting, and dynamic optimizations
+core = 7.x
+dependencies[] = bean
+package = Bean
