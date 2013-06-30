@@ -44,18 +44,6 @@ class ConductricsBlockBean extends BeanPlugin {
 	* Displays the bean.
 	*/
 	public function view($bean, $content, $view_mode = 'default', $langcode = NULL) {
-
-		// ***** TODO - only should do this once, not every view
-		$pass = array(
-			'conductrics-jquery' => array(
-				'owner' => variable_get('conductrics_owner_code', ''),
-				'apiKey' => variable_get('conductrics_api_key', ''),
-				'baseUrl' => variable_get('conductrics_api_url', ''),
-			)
-		);
-		drupal_add_js($pass, 'setting');
-		// *****
-
 		// Set markup index as empty.
 		$content['#markup'] = '';
 		$bean->data['experiences'] = array(

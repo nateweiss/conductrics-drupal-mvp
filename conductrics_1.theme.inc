@@ -8,7 +8,7 @@
  * Define theme templates.
  */
 function theme_agent_experience(&$variables) {
-	$content = '<div class="conductrics-experience" data-agent="'. $variables['agent_code'] .'" data-choice="' . $variables['choice_code'] . '">';
+	$content = '<div class="conductrics-experience" data-conductrics-agent="'. $variables['agent_code'] .'" data-conductrics-choice="' . $variables['choice_code'] . '">';
 	foreach ( $variables['entities'] as $display_bean) {
 		$content .= theme('agent_experience_child',
 			array(

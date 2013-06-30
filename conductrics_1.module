@@ -15,9 +15,18 @@ function conductrics_1_bean_types_api_info() {
 * Implements hook_init().
 */
 function conductrics_1_init() {
-	drupal_add_css(drupal_get_path('module', 'conductrics_1') .'/assets/conductrics-experience.css'); // best to remain first (pre-hides elements to avoid 'flicker')
-	drupal_add_js(drupal_get_path('module', 'conductrics_1') .'/assets/conductrics.jquery.js'); // relies on jquery
-	drupal_add_js(drupal_get_path('module', 'conductrics_1') .'/assets/conductrics-experience.js'); // relies on conductrics.jquery
+	$path = drupal_get_path('module', 'conductrics_1') . '/assets';
+	drupal_add_css($path.'/conductrics-experience.css', array('scope' => 'header') ); // include css before js (point is to avoid 'flicker')
+	drupal_add_js($path .'/conductrics.jquery.js', array('scope' => 'header') ); // relies on jquery
+	drupal_add_js($path .'/conductrics-experience.js', array('scope' => 'footer')); // relies on conductrics.jquery
+	$conductrics_jquery_options = array(
+		'conductrics-jquery' => array(
+			'owner' => variable_get('conductrics_owner_code', ''),
+			'apiKey' => variable_get('conductrics_api_key', ''),
+			'baseUrl' => variable_get('conductrics_api_url', ''),
+		)
+	);
+	drupal_add_js($conductrics_jquery_options, 'setting');
 }
 
 /**
