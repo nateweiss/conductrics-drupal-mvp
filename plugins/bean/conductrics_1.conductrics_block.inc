@@ -61,13 +61,13 @@ class ConductricsBlockBean extends BeanPlugin {
 	      }
 	    }
 
+		$i = 0;
 	    foreach ($bean->experiences as $choice_code => $experience) {
 			if (isset($experience['beans'])) {
-				$i = 0;
 		        $form['experiences'][$choice_code] = array(
 		          '#type' => 'fieldset',
 		          '#tree' => TRUE,
-		          '#title' => t($choice_code),
+		          '#title' => t(ucwords(str_replace('-', ' ', $choice_code))),
 		          '#group' => 'experiences',
 		          '#weight' => $i++,
 		        );
