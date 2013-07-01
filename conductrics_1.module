@@ -92,6 +92,8 @@ function conductrics_1_theme() {
 function conductrics_1_admin() {
 	$form = array();
 
+	// TODO - store the values in one array, rather than seperate variables
+
 	$form['conductrics_owner_code'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Owner Code'),

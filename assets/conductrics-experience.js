@@ -1,8 +1,7 @@
 (function( $ ) {
 
-	// initialize Conductrics plugin for jQuery
-	$.conductrics(Drupal.settings['conductrics-jquery']);
-	// look at special data attributes ('data-agent' and 'data-choice') and show/hide accordingly
-	$('.conductrics-experience').conductrics('autowire');
+	// look at special data attributes ('data-conductrics-agent' etc) and show/hide accordingly
+	$.conductrics(Drupal.settings['conductrics-jquery']); // passed via drupal_add_js
+	$('.conductrics-experience').conductrics('autowire'); // show appropriate content
 
 })( jQuery );
