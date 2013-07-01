@@ -35,7 +35,7 @@ function conductrics_1_init() {
 function conductrics_1_bean_types() {
 	$plugins = array();
 	$plugins['conductrics_block'] = array(
-		'label' => t('Conductrics Block'), //note this appears as the Heading when creating a new block of this type
+		'label' => t('Conductrics Selection'), //note this appears as the Heading when creating a new block of this type
 		'description' => t('Container for a Conductrics test or targeting/optimization.'),
 		'handler' => array(
 			'class' => 'ConductricsBlockBean',
