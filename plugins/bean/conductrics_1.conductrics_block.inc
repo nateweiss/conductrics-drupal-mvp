@@ -46,6 +46,15 @@ class ConductricsBlockBean extends BeanPlugin {
 			'#required' => TRUE,
 		);
 
+		$form['settings']['nodes'] = array(
+			'#type' => 'node_selection',
+			'#title' => t('Agent Code'),
+			'#size' => 30,
+			'#default_value' => $bean->settings['agent_code'],
+			'#description' => 'unique code/name',
+			'#required' => TRUE,
+		);
+
 	    $form['experiences'] = array(
 	      '#type' => 'vertical_tabs',
 	      '#tree' => TRUE,
@@ -107,4 +116,7 @@ class ConductricsBlockBean extends BeanPlugin {
 		}
 		return $content;
 	}
+
+
+
 }

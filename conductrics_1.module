@@ -147,3 +147,81 @@ function conductrics_1_admin() {
 	return system_settings_form($form);
 }
 
+/**
+* Implements hook_elements().
+*/
+function conductrics_1_element_info() {
+  return array(
+    'node_selection' => array(
+      '#input' => TRUE,
+      '#tree' => TRUE,
+      '#process' => array('conductrics_1_element_process_callback'),
+    ),
+  );
+}
+
+
+/**
+* Generates form elements for my element.
+*/
+function conductrics_1_element_process_callback($element, &$form_state) {
+
+  // Add two textfields to the element
+  $element['criteria'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Textfield 1'),
+    '#size' => 10,
+    '#ajax' => array(
+    	'callback' => 'conductrics_1_element_callback',
+    	'wrapper' => 'conductrics_1_dynamic_div',
+    	'method' => 'replace',
+    	'effect' => 'fade',
+    ),
+  );
+
+  /*
+  $element['checkboxes_fieldset'] = array(
+    '#title' => t("Generated Stuff"),
+    '#prefix' => '<div id="conductrics_1_dynamic_div">',
+    '#suffix' => '</div>',
+    '#type' => 'fieldset',
+    '#description' => t('This is where we get automatically generated checkboxes'),
+  );*/
+
+	$options = array();
+  	if (isset($form_state['values']['settings']['nodes']['criteria'])) {
+	  	$criteria = $form_state['values']['settings']['nodes']['criteria'];
+	  	$all_beans = bean_get_all_beans();
+	  	foreach ($all_beans as $node) {
+	  		if (stristr($node->label(), $criteria)) {
+				$nid = $node->internalIdentifier();
+	  			$options[$nid] = array(
+	  				'id' => $node->internalIdentifier(),
+					'title' => $node->label(),
+	  			);
+	  		}
+	  	}
+  	};
+
+	$element['items'] = array(
+		'#type' => 'tableselect',
+		'#multiple' => FALSE,
+		'#header' => array(
+			'title' => array(
+				'data' => t("Title"),
+				'width' => '100%',
+			),
+			'id' => t("Id"),
+	),
+	'#options' => $options,
+	'#title' => 'Blocks',
+    '#prefix' => '<div id="conductrics_1_dynamic_div">',
+    '#suffix' => '</div>',
+	);
+
+  return $element;
+}
+
+function conductrics_1_element_callback($form, $form_state) {
+  	return $form['settings']['nodes']['items'];
+}
