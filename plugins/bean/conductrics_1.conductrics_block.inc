@@ -11,18 +11,28 @@ class ConductricsBlockBean extends BeanPlugin {
 		$values = array(
 			'settings' => array(
 				'agent_code' => '',
+				'selection_mode' => 'block-vis',
 			),
 			'experiences' => array(
 				'experience-a' => array(
-					'beans' => array(),
+					'blocks' => array(
+						array(
+							'module' => 'bean',
+							'delta' => 'block-a'
+						),
+					),
 				),
 				'experience-b' => array(
-					'beans' => array(),
+					'blocks' => array(
+						array(
+							'module' => 'bean',
+							'delta' => 'block-b'
+						),
+					),
 				),
 			),
 		);
 		return $values;
-		//return array_merge(parent::values(), $values);
 	}
 
 	/**
@@ -31,10 +41,17 @@ class ConductricsBlockBean extends BeanPlugin {
 	public function form($bean, $form, &$form_state) {
 		$form = array();
 
+		$ajax_for_block_list = array(
+	    	'callback' => 'conductrics_1_element_callback',
+	    	'wrapper' => 'conductrics_1_dynamic_div',
+	    	'method' => 'replace',
+	    	'effect' => 'fade',
+	    );
+
 		$form['settings'] = array(
 			'#type' => 'fieldset',
 			'#tree' => 1,
-			'#title' => t('Conductrics Agent'),
+			'#title' => t('Conductrics'),
 		);
 
 		$form['settings']['agent_code'] = array(
@@ -46,50 +63,22 @@ class ConductricsBlockBean extends BeanPlugin {
 			'#required' => TRUE,
 		);
 
-		$form['settings']['nodes'] = array(
-			'#type' => 'node_selection',
-			'#title' => t('Agent Code'),
-			'#size' => 30,
-			'#default_value' => $bean->settings['agent_code'],
-			'#description' => 'unique code/name',
-			'#required' => TRUE,
+		$form['settings']['selection_mode'] = array(
+			'#type' => 'radios',
+			'#options' => array(
+				'block-vis' => '&nbsp;' . t('<strong>Block Visibility</strong> - Show or hide one block'),
+				'block-swap' => '&nbsp;' . t('<strong>Block Selection</strong> - Show one of several blocks'),
+			),
+			// '#default_value' => 'block-vis',
+			'#title' => 'Type of Test',
 		);
 
-	    $form['experiences'] = array(
-	      '#type' => 'vertical_tabs',
-	      '#tree' => TRUE,
-	    );
-
-	    $all_beans = bean_get_all_beans();
-	    $bean_list = array();
-	    if (!empty($all_beans)) {
-	      foreach ($all_beans as $loaded_bean) {
-	        if ($loaded_bean->bundle() != 'Conductrics_1') {
-	          $bean_list[$loaded_bean->internalIdentifier()] = $loaded_bean->label();
-	        }
-	      }
-	    }
-
-		$i = 0;
-	    foreach ($bean->experiences as $choice_code => $experience) {
-			if (isset($experience['beans'])) {
-		        $form['experiences'][$choice_code] = array(
-		          '#type' => 'fieldset',
-		          '#tree' => TRUE,
-		          '#title' => t(ucwords(str_replace('-', ' ', $choice_code))),
-		          '#group' => 'experiences',
-		          '#weight' => $i++,
-		        );
-		        $form['experiences'][$choice_code]['beans'] = array(
-		          '#type' => 'select',
-		          '#title' => t('Beans'),
-		          '#options' => $bean_list,
-		          '#default_value' => $experience['beans'],
-		          '#required' => FALSE,
-		          '#multiple' => TRUE,
-		        );
-		    };
-	  	}
+		// simple 'filter' to use to reduce the set of blocks down
+		$form['settings']['autocomplete_blocks'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Blocks'),
+			'#autocomplete_path' => 'autocomplete/blocks',
+		);
 
 		return $form;
 	}
@@ -102,11 +91,10 @@ class ConductricsBlockBean extends BeanPlugin {
 		$content['#markup'] = '';
 		// Loop through experiences and extract beans for display.
 		foreach ($bean->experiences as $key => $experience) {
-			if (isset($experience['beans'])) {
-				$display_beans = bean_load_multiple($experience['beans']);
+			if (isset($experience['blocks'])) {
 				$content['#markup'] .= theme('agent_experience',
 					array(
-						'entities' => $display_beans,
+						'blocks' => $experience['blocks'],
 						'view_mode' => $view_mode, # needed?
 						'agent_code' => $bean->settings['agent_code'],
 						'choice_code' => $key,
@@ -116,7 +104,5 @@ class ConductricsBlockBean extends BeanPlugin {
 		}
 		return $content;
 	}
-
-
 
 }

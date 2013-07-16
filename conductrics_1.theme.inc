@@ -9,11 +9,10 @@
  */
 function theme_agent_experience(&$variables) {
 	$content = '<div class="conductrics-experience" data-conductrics-agent="'. $variables['agent_code'] .'" data-conductrics-choice="' . $variables['choice_code'] . '">';
-	foreach ( $variables['entities'] as $display_bean) {
-		$content .= theme('agent_experience_child',
+	foreach ( $variables['blocks'] as $display_block) {
+		$content .= theme('agent_experience_block',
 			array(
-				'entity' => $display_bean,
-				'view_mode' => $variables['view_mode'],
+				'block' => $display_block,
 			)
 		);
 	}
@@ -21,9 +20,10 @@ function theme_agent_experience(&$variables) {
 	return $content;
 }
 
-function theme_agent_experience_child(&$variables) {
-	$child_bean = bean_view($variables['entity'], $variables['view_mode']);
-	return render($child_bean);
+function theme_agent_experience_block(&$variables) {
+	$block_info = block_load($variables['block']['module'], $variables['block']['delta']);
+	$block = _block_get_renderable_array(_block_render_blocks(array($block_info)));
+	return render($block);
 }
 
 function theme_preprocess_page(&$vars, $hook) {

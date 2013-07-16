@@ -62,8 +62,21 @@ function conductrics_1_menu() {
     'type' => MENU_NORMAL_ITEM,
    );
 
+  $items['autocomplete/blocks'] = array(
+  	'title' => t('Conductrics AJAX Callback - Blocks'),
+  	'page callback' => 'conductrics_1_autocomplete_blocks',
+    'access arguments' => array('administer conductrics_1 settings'),
+  	'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
+
+function conductrics_1_autocomplete_blocks($filter) {
+	$items = conductrics_1_blocks_matching($filter);
+	return drupal_json_output($items);
+}
+
 
 /**
  * Implements hook_theme().
@@ -79,10 +92,9 @@ function conductrics_1_theme() {
     ),
     'file' => 'conductrics_1.theme.inc',
   );
-  $items['agent_experience_child'] = array(
+  $items['agent_experience_block'] = array(
     'arguments' => array(
-      'entity' => NULL,
-      'view_mode'  => NULL,
+      'block' => NULL,
     ),
     'file' => 'conductrics_1.theme.inc',
   );
@@ -165,63 +177,44 @@ function conductrics_1_element_info() {
 * Generates form elements for my element.
 */
 function conductrics_1_element_process_callback($element, &$form_state) {
-
-  // Add two textfields to the element
-  $element['criteria'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Textfield 1'),
-    '#size' => 10,
-    '#ajax' => array(
-    	'callback' => 'conductrics_1_element_callback',
-    	'wrapper' => 'conductrics_1_dynamic_div',
-    	'method' => 'replace',
-    	'effect' => 'fade',
-    ),
-  );
-
-  /*
-  $element['checkboxes_fieldset'] = array(
-    '#title' => t("Generated Stuff"),
-    '#prefix' => '<div id="conductrics_1_dynamic_div">',
-    '#suffix' => '</div>',
-    '#type' => 'fieldset',
-    '#description' => t('This is where we get automatically generated checkboxes'),
-  );*/
-
-	$options = array();
-  	if (isset($form_state['values']['settings']['nodes']['criteria'])) {
-	  	$criteria = $form_state['values']['settings']['nodes']['criteria'];
-	  	$all_beans = bean_get_all_beans();
-	  	foreach ($all_beans as $node) {
-	  		if (stristr($node->label(), $criteria)) {
-				$nid = $node->internalIdentifier();
-	  			$options[$nid] = array(
-	  				'id' => $node->internalIdentifier(),
-					'title' => $node->label(),
-	  			);
-	  		}
-	  	}
-  	};
-
-	$element['items'] = array(
-		'#type' => 'tableselect',
-		'#multiple' => FALSE,
-		'#header' => array(
-			'title' => array(
-				'data' => t("Title"),
-				'width' => '100%',
-			),
-			'id' => t("Id"),
-	),
-	'#options' => $options,
-	'#title' => 'Blocks',
-    '#prefix' => '<div id="conductrics_1_dynamic_div">',
-    '#suffix' => '</div>',
-	);
-
-  return $element;
+	return $element;
 }
 
 function conductrics_1_element_callback($form, $form_state) {
   	return $form['settings']['nodes']['items'];
 }
+
+function conductrics_1_blocks_matching($criteria) {
+	$all_blocks = conductrics_1_block_list();
+	$results = array();
+	foreach ($all_blocks as $region) {
+		foreach ($region as $block) {
+			// TODO - better to do this criteria-matching in the query
+			if ($criteria == '' or stristr($block->module, $criteria) or stristr($block->delta, $criteria) or stristr($block->theme, $criteria)) {
+				$identifier = "$block->module:$block->delta";
+				$results[$identifier] = "Block '$block->delta' from module '$block->module' (theme '$block->theme')";
+			}
+		}
+	}
+	return $results;
+ }
+
+/**
+* Gets a list of all eligible blocks from the database.
+*/
+// adapted from _block_load_blocks (see https://api.drupal.org/api/drupal/modules%21block%21block.module/function/_block_load_blocks/7)
+function conductrics_1_block_list() {
+	$query = db_select('block', 'b');
+	$result = $query->fields('b')->condition('b.status', 1)->orderBy('b.region')->orderBy('b.weight')->orderBy('b.module')->addTag('block_load')->addTag('translatable')->execute();
+
+	$block_info = $result->fetchAllAssoc('bid');
+	// Allow modules to modify the block list.
+	drupal_alter('block_list', $block_info); // TODO - ask Acquia folks whether it makes sense to honor this hook for this purpose?
+
+	$blocks = array();
+	foreach ($block_info as $block) {
+		$blocks[$block->region]["{$block->module}_{$block->delta}"] = $block;
+	}
+	return $blocks;
+ }
+
