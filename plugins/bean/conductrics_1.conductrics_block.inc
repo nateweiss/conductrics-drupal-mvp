@@ -9,8 +9,10 @@ class ConductricsBlockBean extends BeanPlugin {
 	*/
 	public function values() {
 		$values = array(
-			'agent_code' => '',
-			'selection_mode' => 'block-vis',
+			'settings' => array(
+				'agent_code' => '',
+				'selection_mode' => 'block-vis',
+			),
 			'experiences' => array(),
 		);
 		return array_merge(parent::values(), $values);
@@ -21,10 +23,11 @@ class ConductricsBlockBean extends BeanPlugin {
 	*/
 	public function form($bean, $form, &$form_state) {
 		$form = array();
+		$num_blocks = 4; // TODO - make this a form element or provide other user gesture for adding/removing "experiences"
 
 		$form['selection_mode'] = array(
 			'#type' => 'radios',
-			'#default_value' => 'block-vis',
+			'#default_value' => $bean->settings['selection_mode'],
 			'#options' => array(
 				'block-vis' => t('&nbsp;<strong>Block Visibility</strong> - Show or hide one block'),
 				'block-swap' => t('&nbsp;<strong>Block Selection</strong> - Show one of several blocks'),
@@ -36,7 +39,7 @@ class ConductricsBlockBean extends BeanPlugin {
 		$form['block_vis'] = array(
 			'#type' => 'fieldset',
 			'#tree' => 1,
-			'#title' => t('Block to Change'),
+			'#title' => t('Block to Show or Hide'),
 			'#states' => array(
 				'visible' => array(
 					':input[name="selection_mode"]' => array('value' => 'block-vis'),
@@ -44,6 +47,7 @@ class ConductricsBlockBean extends BeanPlugin {
 			),
 		);
 
+		$default_value = isset($bean->experiences['block-visible']['blocks'][0]) ? conductrics_1_block_data_to_str($bean->experiences['block-visible']['blocks'][0]) : '';
 		$form['block_vis']['block'] = array(
 			'#type' => 'textfield',
 			'#title' => t("Block"),
@@ -54,6 +58,7 @@ class ConductricsBlockBean extends BeanPlugin {
 			),
 			'#size' => 30,
 			'#autocomplete_path' => 'autocomplete/blocks',
+			'#default_value' => $default_value,
 		);
 
 		// Container fieldset for the "block swap" selection use case
@@ -68,9 +73,9 @@ class ConductricsBlockBean extends BeanPlugin {
 			),
 		);
 
-		$num_blocks = 4; // TODO - make this a form element or provide other user gesture for adding/removing "experiences"
 		for ($num = 1; $num <= $num_blocks; $num++) {
 			$is_required = ($num <= 2);
+			$default_value = isset($bean->experiences["block-$num"]['blocks'][0]) ? conductrics_1_block_data_to_str($bean->experiences["block-$num"]['blocks'][0]) : '';
 			$form['block_swap']["block_$num"] = array(
 				'#type' => 'textfield',
 				'#title' => t("Block $num"),
@@ -81,6 +86,7 @@ class ConductricsBlockBean extends BeanPlugin {
 				),
 				'#size' => 30,
 				'#autocomplete_path' => 'autocomplete/blocks',
+				'#default_value' => $default_value,
 			);
 		}
 
@@ -89,12 +95,42 @@ class ConductricsBlockBean extends BeanPlugin {
 			'#weight' => 2,
 			'#title' => t('Conductrics Agent Code'),
 			'#size' => 30,
-			'#default_value' => $bean->agent_code,
+			'#default_value' => $bean->settings['agent_code'],
 			'#description' => 'unique code/name',
 			'#required' => TRUE,
 		);
 
 		return $form;
+	}
+
+	public function validate($values, &$form_state) {
+		$num_blocks = 4; // TODO - make this a form element or provide other user gesture for adding/removing "experiences"
+
+		if ( !in_array($values['selection_mode'], array('block-vis', 'block-swap')) ) {
+			form_set_error('selection_mode', t("Unknown selection_mode."));
+		}
+		if ( $values['selection_mode'] == 'block-vis' ) {
+			$val = $values['block_vis']['block'];
+			if ( !conductrics_1_block_str_valid($val) ) {
+				form_set_error($values['block_vis']['block'], t("You need to select a Block to show or hide."));
+			}
+		}
+		if ( $values['selection_mode'] == 'block-swap' ) {
+			for ($num = 1; $num <= $num_blocks; $num++) {
+				$val = $values['block_swap']["block_$num"];
+				$is_required = $num <= 2;
+				if ($is_required && empty($val)) {
+					form_set_error("block_swap][block_$num", t('You must provide at least two blocks to select from.'));
+					continue;
+				}
+				if ( !empty($val) && !conductrics_1_block_str_valid($val) ) {
+					form_set_error("block_swap][block_$num", t("Invalid Block $num provided - please choose from one of the available blocks." . $val));
+				}
+			}
+		}
+		if ( !conductrics_1_code_valid($values['agent_code']) ) {
+			form_set_error('agent_code', t('Invalid Agent Code - you can use letters, numbers, dashes, and underscores, but no spaces or other special characters.'));
+		}
 	}
 
 	/**
@@ -111,7 +147,7 @@ class ConductricsBlockBean extends BeanPlugin {
 						array(
 							'blocks' => $experience['blocks'],
 							'view_mode' => $view_mode, # needed?
-							'agent_code' => $bean->agent_code,
+							'agent_code' => $bean->settings['agent_code'],
 							'choice_code' => $key,
 						)
 					);
