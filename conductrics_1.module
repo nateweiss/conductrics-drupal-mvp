@@ -241,6 +241,15 @@ function conductrics_1_admin($form, &$form_state) {
 			'#size' => 8,
 			'#maxlength' => 50,
 			'#disabled' => isset($goals[$goal_code]),
+			'#required' => TRUE,
+		);
+		$form['goals'][$goal_code]['value'] = array(
+			'#type' => 'textfield',
+			'#title' => t('valued at'),
+			'#default_value' => $goal['urls'],
+			'#size' => 2,
+			'#required' => TRUE,
+			'#default_value' => isset($goal['value']) ? $goal['value'] : 1,
 		);
 		$form['goals'][$goal_code]['goal_mode'] = array(
 			'#type' => 'select',
@@ -249,6 +258,7 @@ function conductrics_1_admin($form, &$form_state) {
 			'#options' => array(
 				'page-load' => "on page load",
 			),
+			'#required' => TRUE,
 		);
 		$form['goals'][$goal_code]['urls'] = array(
 			'#type' => 'textfield',
@@ -257,14 +267,6 @@ function conductrics_1_admin($form, &$form_state) {
 			'#size' => 20,
 			'#maxlength' => 500,
 			'#required' => TRUE,
-		);
-		$form['goals'][$goal_code]['value'] = array(
-			'#type' => 'textfield',
-			'#title' => t('Value'),
-			'#default_value' => $goal['urls'],
-			'#size' => 2,
-			'#required' => TRUE,
-			'#default_value' => isset($goal['value']) ? $goal['value'] : 1,
 		);
 	}
 
@@ -295,6 +297,15 @@ function conductrics_1_admin_validate($form, &$form_state) {
 	if (!conductrics_1_code_valid($form_state['values']['conductrics_owner_code'])) {
 		form_set_error('conductrics_owner_code', "Invalid owner code");
 	}
+	foreach ($form_state['goal_codes'] as $goal_code) {
+		$fieldset = $form_state['values']['goals'][$goal_code];
+		if (!conductrics_1_code_valid($fieldset['goal_code'])) {
+			form_set_error('', "Invalid goal code for '$goal_code'");
+		}
+		if (!is_numeric($fieldset['value'])) {
+			form_set_error('', "Invalid value provided for '$goal_code' (must be numeric)");
+		}
+	}
 }
 function conductrics_1_admin_submit($form, &$form_state) {
 	variable_set('conductrics_owner_code', $form_state['values']['conductrics_owner_code']);
@@ -305,7 +316,7 @@ function conductrics_1_admin_submit($form, &$form_state) {
 
 	foreach ($form_state['goal_codes'] as $goal_code) {
 		$fieldset = $form_state['values']['goals'][$goal_code];
-		if ($fieldset['goal_code'] == '') {
+		if ($fieldset['value'] == '0') {
 			conductrics_1_goal_remove($goal_code);
 			continue;
 		}
