@@ -223,6 +223,11 @@ function conductrics_1_admin($form, &$form_state) {
 	}
 
 	foreach ($form_state['goal_codes'] as $goal_code) {
+		if ( isset($form_state['values']["remove_$goal_code"]) ) {
+			conductrics_1_goal_remove($goal_code);
+			continue;
+		}
+
 		if (isset($goals[$goal_code])) {
 			$goal = $goals[$goal_code];
 		} else {
@@ -259,6 +264,7 @@ function conductrics_1_admin($form, &$form_state) {
 			'#options' => array(
 				'page-load' => "on page load",
 			),
+			'#default_value' => 'page-load',
 			'#required' => TRUE,
 		);
 		$form['goals'][$goal_code]['urls'] = array(
@@ -268,6 +274,11 @@ function conductrics_1_admin($form, &$form_state) {
 			'#size' => 20,
 			'#maxlength' => 500,
 			'#required' => TRUE,
+		);
+		$form['goals'][$goal_code]['remove'] = array(
+			'#type' => 'button',
+			'#value' => t('x'),
+			'#name' => "remove_$goal_code",
 		);
 	}
 
@@ -299,12 +310,14 @@ function conductrics_1_admin_validate($form, &$form_state) {
 		form_set_error('conductrics_owner_code', "Invalid owner code");
 	}
 	foreach ($form_state['goal_codes'] as $goal_code) {
-		$fieldset = $form_state['values']['goals'][$goal_code];
-		if (!conductrics_1_code_valid($fieldset['goal_code'])) {
-			form_set_error('', "Invalid goal code for '$goal_code'");
-		}
-		if (!is_numeric($fieldset['value'])) {
-			form_set_error('', "Invalid value provided for '$goal_code' (must be numeric)");
+		if (isset($form_state['values']['goals'][$goal_code])) {
+			$fieldset = $form_state['values']['goals'][$goal_code];
+			if (!conductrics_1_code_valid($fieldset['goal_code'])) {
+				form_set_error('', "Invalid goal code for '$goal_code'");
+			}
+			if (!is_numeric($fieldset['value'])) {
+				form_set_error('', "Invalid value provided for '$goal_code' (must be numeric)");
+			}
 		}
 	}
 }
@@ -316,19 +329,17 @@ function conductrics_1_admin_submit($form, &$form_state) {
 	variable_set('conductrics_console_url', $form_state['values']['conductrics_console_url']);
 
 	foreach ($form_state['goal_codes'] as $goal_code) {
-		$fieldset = $form_state['values']['goals'][$goal_code];
-		if ($fieldset['value'] == '0') {
-			conductrics_1_goal_remove($goal_code);
-			continue;
+		if (isset($form_state['values']['goals'][$goal_code])) {
+			$fieldset = $form_state['values']['goals'][$goal_code];
+			$data = array(
+				'goal_mode' => $fieldset['goal_mode'],
+				'value' => $fieldset['value'],
+			);
+			if ($data['goal_mode'] == 'page-load') {
+				$data['urls'] = $fieldset['urls'];
+			}
+			conductrics_1_goal_update($goal_code, $data);
 		}
-		$data = array(
-			'goal_mode' => $fieldset['goal_mode'],
-			'value' => $fieldset['value'],
-		);
-		if ($data['goal_mode'] == 'page-load') {
-			$data['urls'] = $fieldset['urls'];
-		}
-		conductrics_1_goal_update($goal_code, $data);
 	}
 }
 
