@@ -92,12 +92,38 @@ class ConductricsBlockBean extends BeanPlugin {
 
 		$form['agent_code'] = array(
 			'#type' => 'textfield',
-			'#weight' => 2,
 			'#title' => t('Conductrics Agent Code'),
 			'#size' => 30,
 			'#default_value' => $bean->settings['agent_code'],
-			'#description' => 'unique code/name',
+			'#description' => 'unique code/name (letters, numbers, dashes, and underscores allowed - no spaces)',
 			'#required' => TRUE,
+		);
+
+
+		$goal_options = array();
+		$goal_items = conductrics_1_goals_get();
+		$goals_selected = array();
+		foreach ($goal_items as $goal_code => $goal_item) {
+			if (!isset($goal_item['agents'])) {
+				continue;
+			};
+			$goal_options[$goal_code] = t("&nbsp;<strong>$goal_code</strong> (value " . $goal_item['value'] . ')' ); // TODO - does drupal dogma call for theme function here?
+			if ( in_array($bean->settings['agent_code'], $goal_item['agents']) ) {
+				array_push($goals_selected, $goal_code);
+			}
+		}
+
+		$form['goals_fieldset'] = array(
+			'#type' => 'fieldset',
+			'#title' => 'Goals',
+			'#tree' => FALSE,
+		);
+		$form['goals_fieldset']['goals'] = array(
+			'#type' => 'checkboxes',
+			'#title' => t('Reward the Agent for these goals:'),
+			'#required' => TRUE, // TODO - what if there aren't any goals to select?
+			'#options' => $goal_options,
+			'#default_value' => $goals_selected,
 		);
 
 		return $form;

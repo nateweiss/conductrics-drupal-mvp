@@ -75,6 +75,7 @@ function conductrics_1_bean_submit(&$bean, &$form, &$form_state) {
 		'selection_mode' => $values['selection_mode'],
 	);
 	$form_state['values']['experiences'] = $experiences;
+	conductrics_1_goals_associate( $form_state['values']['agent_code'], $form_state['values']['goals'] );
 	unset($form_state['values']['agent_code']);
 	unset($form_state['values']['selection_mode']);
 }
@@ -362,7 +363,7 @@ function conductrics_1_goal_update($goal_code, $data) {
 	$goals = conductrics_1_goals_get();
 	if ( !isset($goals[$goal_code]) ) {
 		$goals[$goal_code] = array(
-			'agents' => array(), // maintained via conductrics_1_goal_associate
+			'agents' => array(), // maintained via conductrics_1_goals_associate
 		);
 	}
 	foreach ($data as $key => $value) {
@@ -375,18 +376,21 @@ function conductrics_1_goal_remove($goal_code) {
 	unset($goals[$goal_code]);
 	conductrics_1_goals_set($goals);
 }
-function conductrics_1_goal_associate($goal_code, $agent_code, $flag) {
+function conductrics_1_goals_associate($agent_code, $goal_selections) {
 	$goals = conductrics_1_goals_get();
-	if (isset($goals[$goal_code]['agents'])) {
-		if ($flag) {
-			if (!in_array($agent_code, $goals[$goal_code]['agents'])) {
-				array_push($goals[$goal_code]['agents'], $agent_code);
+	foreach ($goals as $goal_code => &$goal_item) {
+		if ( isset($goal_selections[$goal_code]) && $goal_selections[$goal_code] ) { // user wants an association
+			if ( !in_array($agent_code, $goal_item['agents']) ) { // and there is no association now
+				array_push($goal_item['agents'], $agent_code);
 			}
-		} else {
-			$goals[$goal_code]['agents'] = array_diff($goals[$goal_code]['agents'], array($agent_code));
+		} else { // user doesn't want an association
+			if ( in_array($agent_code, $goal_item['agents']) ) { // and there is an association now
+				$offset = array_search($agent_code, $goal_item['agents']);
+				array_splice($goal_item['agents'], $offset, 1);
+			}
 		}
 	}
-	variable_set('conductrics_goals', $goals);
+	conductrics_1_goals_set($goals);
 }
 
 function conductrics_1_autocomplete_blocks($filter) {
