@@ -305,6 +305,17 @@ function conductrics_1_admin($form, &$form_state) {
 	return $form;
 }
 
+function conductrics_1_preprocess_html(&$variables) {
+	$goals = conductrics_1_goals_get();
+	$goal_strs = array();
+	foreach ($goals as $goal_code => $goal_item) {
+		foreach ($goal_item['agents'] as $agent_code) {
+			array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
+		}
+	}
+	$variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
+}
+
 function conductrics_1_admin_validate($form, &$form_state) {
 	if (!conductrics_1_code_valid($form_state['values']['conductrics_owner_code'])) {
 		form_set_error('conductrics_owner_code', "Invalid owner code");
