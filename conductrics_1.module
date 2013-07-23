@@ -309,8 +309,16 @@ function conductrics_1_preprocess_html(&$variables) {
 	$goals = conductrics_1_goals_get();
 	$goal_strs = array();
 	foreach ($goals as $goal_code => $goal_item) {
-		foreach ($goal_item['agents'] as $agent_code) {
-			array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
+		$goal_relevant_here = false;
+		if ($goal_item['goal_mode'] == 'page-load') {
+			if ( fnmatch($goal_item['urls'], request_path()) ) {
+				$goal_relevant_here = true;
+			}
+		}
+		if ($goal_relevant_here) {
+			foreach ($goal_item['agents'] as $agent_code) {
+				array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
+			}
 		}
 	}
 	$variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
