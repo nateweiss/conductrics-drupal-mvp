@@ -19,11 +19,13 @@ function conductrics_1_init() {
 	drupal_add_css($path.'/conductrics-experience.css', array('scope' => 'header') ); // include css before js (point is to avoid 'flicker')
 	drupal_add_js($path .'/conductrics.jquery.js', array('scope' => 'header') ); // relies on jquery
 	drupal_add_js($path .'/conductrics-experience.js', array('scope' => 'footer')); // relies on conductrics.jquery
+
+	$account_info = variable_get('conductrics_account_info');
 	$conductrics_jquery_options = array(
 		'conductrics-jquery' => array(
-			'owner' => variable_get('conductrics_owner_code', ''),
-			'apiKey' => variable_get('conductrics_api_key', ''),
-			'baseUrl' => variable_get('conductrics_api_url', ''),
+			'owner' => $account_info['owner_code'],
+			'apiKey' => $account_info['api_key'],
+			'baseUrl' => !empty($account_info['api_url']) ? $account_info['api_url'] : 'https://api.conductrics.com',
 		)
 	);
 	drupal_add_js($conductrics_jquery_options, 'setting');
@@ -152,17 +154,17 @@ function conductrics_1_theme() {
 }
 
 function conductrics_1_admin($form, &$form_state) {
+	$account_info = variable_get('conductrics_account_info');
 
 	$form['account'] = array(
 		'#type' => 'fieldset',
 		'#title' => 'Account Settings',
 	);
 
-	// TODO - store the values in one array, rather than separate variables
 	$form['account']['conductrics_owner_code'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Owner Code'),
-		'#default_value' => variable_get('conductrics_owner_code', ''),
+		'#default_value' => $account_info['owner_code'],
 		'#size' => 35,
 		'#maxlength' => 50,
 		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'owner')"),
@@ -172,7 +174,7 @@ function conductrics_1_admin($form, &$form_state) {
 	$form['account']['conductrics_api_key'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Runtime API Key'),
-		'#default_value' => variable_get('conductrics_api_key', ''),
+		'#default_value' => $account_info['api_key'],
 		'#size' => 35,
 		'#maxlength' => 50,
 		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'api')"),
@@ -182,7 +184,7 @@ function conductrics_1_admin($form, &$form_state) {
 	$form['account']['conductrics_admin_key'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Admin API Key'),
-		'#default_value' => variable_get('conductrics_admin_key', ''),
+		'#default_value' => $account_info['admin_key'],
 		'#size' => 35,
 		'#maxlength' => 50,
 		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'admin')"),
@@ -192,7 +194,7 @@ function conductrics_1_admin($form, &$form_state) {
 	$form['account']['conductrics_api_url'] = array(
 		'#type' => 'textfield',
 		'#title' => t('API Server URL'),
-		'#default_value' => variable_get('conductrics_api_url', 'https://api.conductrics.com'),
+		'#default_value' => $account_info['api_url'],
 		'#size' => 35,
 		'#maxlength' => 50,
 		'#description' => t("Adjust this URL only if using a custom server from Conductrics."),
@@ -202,7 +204,7 @@ function conductrics_1_admin($form, &$form_state) {
 	$form['account']['conductrics_console_url'] = array(
 		'#type' => 'textfield',
 		'#title' => t('Console URL'),
-		'#default_value' => variable_get('conductrics_console_url', 'https://console.conductrics.com'),
+		'#default_value' => $account_info['console_url'],
 		'#size' => 35,
 		'#maxlength' => 50,
 		'#description' => t("Adjust this URL only if using a custom server from Conductrics."),
@@ -341,11 +343,14 @@ function conductrics_1_admin_validate($form, &$form_state) {
 	}
 }
 function conductrics_1_admin_submit($form, &$form_state) {
-	variable_set('conductrics_owner_code', $form_state['values']['conductrics_owner_code']);
-	variable_set('conductrics_api_key', $form_state['values']['conductrics_api_key']);
-	variable_set('conductrics_admin_key', $form_state['values']['conductrics_admin_key']);
-	variable_set('conductrics_api_url', $form_state['values']['conductrics_api_url']);
-	variable_set('conductrics_console_url', $form_state['values']['conductrics_console_url']);
+	$account_info = array(
+		'owner_code' => $form_state['values']['conductrics_owner_code'],
+		'api_key' => $form_state['values']['conductrics_api_key'],
+		'admin_key' => $form_state['values']['conductrics_admin_key'],
+		'api_url' => $form_state['values']['conductrics_api_url'],
+		'console_url' => $form_state['values']['conductrics_console_url'],
+	);
+	variable_set('conductrics_account_info', $account_info);
 
 	foreach ($form_state['goal_codes'] as $goal_code) {
 		if (isset($form_state['values']['goals'][$goal_code])) {
