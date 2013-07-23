@@ -155,10 +155,17 @@ function conductrics_1_theme() {
 
 function conductrics_1_admin($form, &$form_state) {
 	$account_info = variable_get('conductrics_account_info');
+	$account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
 
 	$form['account'] = array(
 		'#type' => 'fieldset',
-		'#title' => 'Account Settings',
+		'#title' => 'Conductrics Account Settings',
+		'#collapsible' => TRUE,
+		'#collapsed' => $account_info_provided
+	);
+
+	$form['account']['msg'] = array(
+		'#markup' => t("<p>This information is used to 'link' your Conductrics account to Drupal.</p><p>You can find these codes by logging into your Conductrics account and going to the Account > Password and Keys page.</p><p>If you don't have a Conductrics account, you can get one now by signing up at <a href='http://conductrics.com' target='_blank'>http://conductrics.com</a> (free signup).</p>"),
 	);
 
 	$form['account']['conductrics_owner_code'] = array(
@@ -191,9 +198,20 @@ function conductrics_1_admin($form, &$form_state) {
 		'#required' => TRUE,
 	);
 
-	$form['account']['conductrics_api_url'] = array(
+	$form['account']['servers'] = array(
+		'#type' => 'fieldset',
+		'#title' => 'Conductrics Server Settings',
+		'#collapsible' => TRUE,
+		'#collapsed' => TRUE,
+	);
+
+	$form['account']['servers']['msg'] = array(
+		'#markup' => t('Normally these fields should be left blank, unless you have specific instructions from Conductrics to use a private server or particular beta/update server.'),
+	);
+
+	$form['account']['servers']['conductrics_api_url'] = array(
 		'#type' => 'textfield',
-		'#title' => t('API Server URL'),
+		'#title' => t('API Server URL (optional)'),
 		'#default_value' => $account_info['api_url'],
 		'#size' => 35,
 		'#maxlength' => 50,
@@ -201,9 +219,9 @@ function conductrics_1_admin($form, &$form_state) {
 		'#required' => FALSE,
 	);
 
-	$form['account']['conductrics_console_url'] = array(
+	$form['account']['servers']['conductrics_console_url'] = array(
 		'#type' => 'textfield',
-		'#title' => t('Console URL'),
+		'#title' => t('Console URL (optional)'),
 		'#default_value' => $account_info['console_url'],
 		'#size' => 35,
 		'#maxlength' => 50,
@@ -220,6 +238,9 @@ function conductrics_1_admin($form, &$form_state) {
 		'#tree' => TRUE,
 	);
 
+	$form['goals']['msg'] = array(
+		'#markup' => t("<p>You should specify at least one page that should be considered a 'Goal' for your site.</p>"),
+	);
 	if (empty($form_state['goal_codes'])) {
 		$form_state['goal_codes'] = array_keys($goals);
 	}
@@ -283,6 +304,10 @@ function conductrics_1_admin($form, &$form_state) {
 			'#name' => "remove_$goal_code",
 		);
 	}
+
+	$form['goals']['msg_2'] = array(
+		'#markup' => t("<p>You can use <code>*</code> as a wildcard, such as <code>/content/special/*</code> if the business goal for your site were to get users to view pages in the 'special' section.</p>"),
+	);
 
 	  $form['goals']['add_goal'] = array(
 	    '#type' => 'submit',
