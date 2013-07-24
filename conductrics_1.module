@@ -15,20 +15,22 @@ function conductrics_1_bean_types_api_info() {
 * Implements hook_init().
 */
 function conductrics_1_init() {
-	$path = drupal_get_path('module', 'conductrics_1') . '/assets';
-	drupal_add_css($path.'/conductrics-experience.css', array('scope' => 'header') ); // include css before js (point is to avoid 'flicker')
-	drupal_add_js($path .'/conductrics.jquery.js', array('scope' => 'header') ); // relies on jquery
-	drupal_add_js($path .'/conductrics-experience.js', array('scope' => 'footer')); // relies on conductrics.jquery
+	if (!path_is_admin(current_path())) {
+		$path = drupal_get_path('module', 'conductrics_1') . '/assets';
+		drupal_add_css($path.'/conductrics-experience.css', array('scope' => 'header') ); // include css before js (point is to avoid 'flicker')
+		drupal_add_js($path .'/conductrics.jquery.js', array('scope' => 'header') ); // relies on jquery
+		drupal_add_js($path .'/conductrics-experience.js', array('scope' => 'footer')); // relies on conductrics.jquery
 
-	$account_info = variable_get('conductrics_account_info');
-	$conductrics_jquery_options = array(
-		'conductrics-jquery' => array(
-			'owner' => $account_info['owner_code'],
-			'apiKey' => $account_info['api_key'],
-			'baseUrl' => !empty($account_info['api_url']) ? $account_info['api_url'] : 'https://api.conductrics.com',
-		)
-	);
-	drupal_add_js($conductrics_jquery_options, 'setting');
+		$account_info = variable_get('conductrics_account_info');
+		$conductrics_jquery_options = array(
+			'conductrics-jquery' => array(
+				'owner' => $account_info['owner_code'],
+				'apiKey' => $account_info['api_key'],
+				'baseUrl' => !empty($account_info['api_url']) ? $account_info['api_url'] : 'https://api.conductrics.com',
+			)
+		);
+		drupal_add_js($conductrics_jquery_options, 'setting');
+	}
 }
 
 /**
@@ -51,6 +53,10 @@ function conductrics_1_bean_types() {
 
 function conductrics_1_bean_submit(&$bean, &$form, &$form_state) {
 	$values = $form_state['values'];
+
+	if ($bean->type != 'conductrics_block') {
+		return;
+	}
 
 	$experiences = array();
 	if ($values['selection_mode'] == 'block-vis') {
@@ -154,6 +160,7 @@ function conductrics_1_theme() {
 }
 
 function conductrics_1_admin($form, &$form_state) {
+	_block_rehash();
 	$account_info = variable_get('conductrics_account_info');
 	$account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
 
@@ -333,22 +340,24 @@ function conductrics_1_admin($form, &$form_state) {
 }
 
 function conductrics_1_preprocess_html(&$variables) {
-	$goals = conductrics_1_goals_get();
-	$goal_strs = array();
-	foreach ($goals as $goal_code => $goal_item) {
-		$goal_relevant_here = false;
-		if ($goal_item['goal_mode'] == 'page-load') {
-			if ( fnmatch($goal_item['urls'], request_path()) ) {
-				$goal_relevant_here = true;
+	if (!path_is_admin(current_path())) {
+		$goals = conductrics_1_goals_get();
+		$goal_strs = array();
+		foreach ($goals as $goal_code => $goal_item) {
+			$goal_relevant_here = false;
+			if ($goal_item['goal_mode'] == 'page-load') {
+				if ( fnmatch($goal_item['urls'], request_path()) ) {
+					$goal_relevant_here = true;
+				}
+			}
+			if ($goal_relevant_here) {
+				foreach ($goal_item['agents'] as $agent_code) {
+					array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
+				}
 			}
 		}
-		if ($goal_relevant_here) {
-			foreach ($goal_item['agents'] as $agent_code) {
-				array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
-			}
-		}
+		$variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
 	}
-	$variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
 }
 
 function conductrics_1_admin_validate($form, &$form_state) {
@@ -405,11 +414,13 @@ function conductrics_1_ajax_add_goal_callback($form, $form_state) {
 
 function conductrics_1_goals_get() {
 	$goals = variable_get('conductrics_goals');
-	if (!isset($goals)) {
+	if (!isset($goals) || count($goals) == 0) {
 		$goals = array(
 			'any-page' => array(
 				'agents' => array(),
+				'goal_mode' => 'page-load',
 				'urls' => array('*'),
+				'value' => 1,
 			),
 		);
 	}
@@ -460,7 +471,7 @@ function conductrics_1_autocomplete_blocks($filter) {
 
 function conductrics_1_blocks_matching($criteria) {
 	$all_blocks = conductrics_1_block_list();
-	$results = array($criteria);
+	$results = array();
 	foreach ($all_blocks as $region) {
 		foreach ($region as $block) {
 			// TODO - better to do this criteria-matching in the query
