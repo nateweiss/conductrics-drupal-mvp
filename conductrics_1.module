@@ -281,10 +281,9 @@ function conductrics_1_admin($form, &$form_state) {
 		$form['goals'][$goal_code]['value'] = array(
 			'#type' => 'textfield',
 			'#title' => t('valued at'),
-			'#default_value' => $goal['urls'],
+			'#default_value' => isset($goal['value']) ? $goal['value'] : 1,
 			'#size' => 2,
 			'#required' => TRUE,
-			'#default_value' => isset($goal['value']) ? $goal['value'] : 1,
 		);
 		$form['goals'][$goal_code]['goal_mode'] = array(
 			'#type' => 'select',
@@ -298,8 +297,8 @@ function conductrics_1_admin($form, &$form_state) {
 		);
 		$form['goals'][$goal_code]['urls'] = array(
 			'#type' => 'textfield',
-			'#title' => t('if URL matches'),
-			'#default_value' => $goal['urls'],
+			'#title' => t('if alias matches'),
+			'#default_value' => implode(',', $goal['urls']), // TODO better to provide multiple patterns - for now assume commas separate patterns
 			'#size' => 20,
 			'#maxlength' => 500,
 			'#required' => TRUE,
@@ -345,8 +344,10 @@ function conductrics_1_preprocess_html(&$variables) {
 		foreach ($goals as $goal_code => $goal_item) {
 			$goal_relevant_here = false;
 			if ($goal_item['goal_mode'] == 'page-load') {
-				if ( fnmatch($goal_item['urls'], request_path()) ) {
-					$goal_relevant_here = true;
+				foreach ($goal_item['urls'] as $url) {
+					if ( fnmatch($url, request_path()) ) {
+						$goal_relevant_here = true;
+					}
 				}
 			}
 			if ($goal_relevant_here) {
@@ -393,7 +394,7 @@ function conductrics_1_admin_submit($form, &$form_state) {
 				'value' => $fieldset['value'],
 			);
 			if ($data['goal_mode'] == 'page-load') {
-				$data['urls'] = $fieldset['urls'];
+				$data['urls'] = explode(',', $fieldset['urls']); // TODO better to provide multiple patterns - for now assume commas separate patterns
 			}
 			conductrics_1_goal_update($goal_code, $data);
 		}
