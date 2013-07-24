@@ -160,7 +160,6 @@ function conductrics_1_theme() {
 }
 
 function conductrics_1_admin($form, &$form_state) {
-	_block_rehash();
 	$account_info = variable_get('conductrics_account_info');
 	$account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
 
@@ -470,19 +469,19 @@ function conductrics_1_autocomplete_blocks($filter) {
 }
 
 function conductrics_1_blocks_matching($criteria) {
-	$all_blocks = conductrics_1_block_list();
+	$theme = 'demonstratie'; // TODO - pass in somehow
 	$results = array();
-	foreach ($all_blocks as $region) {
-		foreach ($region as $block) {
-			// TODO - better to do this criteria-matching in the query
-			if ($criteria == '' or stristr($block->module, $criteria) or stristr($block->delta, $criteria) or stristr($block->theme, $criteria)) {
-				$identifier = "$block->module:$block->delta:$block->theme";
-				$results[$identifier] = "Block '$block->delta' from module '$block->module' (theme '$block->theme')";
-			}
+	$blocks = _block_rehash($theme);
+	foreach ($blocks as $block) {
+		$module = $block['module'];
+		$delta = $block['delta'];
+		$identifier = "$module:$delta";
+		if ($criteria == '' or stristr($module, $criteria) or stristr($delta, $criteria) ) {
+			$results[$identifier] = "Block '$delta' from module '$module'";
 		}
 	}
 	return $results;
- }
+}
 
 // Gets a list of all eligible blocks from the database.
 // adapted from _block_load_blocks (see https://api.drupal.org/api/drupal/modules%21block%21block.module/function/_block_load_blocks/7)
