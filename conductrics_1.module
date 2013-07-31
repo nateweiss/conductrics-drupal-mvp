@@ -327,6 +327,91 @@ function conductrics_1_admin($form, &$form_state) {
 	    ),
 	  );
 
+
+
+	/* TOKENS */
+	if (!isset($form_state['tokens'])) {
+		$form_state['tokens'] = isset($account_info['tokens']) ? $account_info['tokens'] : array();
+	}
+
+	$form['tokens'] = array(
+		'#type' => 'fieldset',
+		'#title' => 'Tokens for Targeting',
+		'#prefix' => '<div id="conductrics_ajax_tokens_wrapper">',
+		'#suffix' => '</div>',
+		'#tree' => TRUE,
+	);
+	$form['tokens']['msg'] = array(
+		'#markup' => "<p>You may pass one or more values from the user's profile to your Conductrics agents, which they will use as targeting features to inform reporting and optimization.</p>",
+	);
+
+	$form['tokens']['add'] = array(
+		'#type' => 'fieldset',
+		'#attributes' => array('class' => array('container-inline')),
+	);
+
+	  $form['tokens']['add']['token'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Pass value of token'),
+		'#default_value' => '',
+		'#size' => 30,
+		'#required' => FALSE,
+	  );
+	  $form['tokens']['add']['prefix'] = array(
+		'#type' => 'textfield',
+		'#title' => t('with prefix'),
+		'#default_value' => '',
+		'#size' => 30,
+		'#required' => FALSE,
+	  );
+
+	  $form['tokens']['add']['btn'] = array(
+	    '#type' => 'submit',
+	    '#value' => t('Add'),
+	    '#submit' => array('conductrics_1_ajax_add_token'),
+	    // See the examples in ajax_example.module for more details on the
+	    // properties of #ajax.
+	    '#attributes' => array('style' => 'margin-bottom:10px'),
+	    '#ajax' => array(
+	      'callback' => 'conductrics_1_ajax_add_token_callback',
+	      'wrapper' => 'conductrics_ajax_tokens_wrapper',
+	    ),
+	  );
+
+	  $options = array();
+	  foreach ($form_state['tokens'] as $code => $value) {
+	  	$options[$code] = array(
+	  		'token' => $code,
+	  		'prefix' => $value['prefix'],
+	  	);
+	  }
+	  if ( count($options) > 0) {
+		  $form['tokens']['existing']['tokens'] = array(
+		  	'#type' => 'tableselect',
+	  		'#options' => $options,
+	  		'#hidden' => count($options) == 0,
+		  	'#header' => array(
+		  		'token' => t('Token'),
+		  		'prefix' => t('Prefix'),
+		  	),
+		  );
+
+		  $form['tokens']['existing']['btn'] = array(
+		    '#type' => 'submit',
+		    '#value' => t('Remove Selected'),
+		    '#submit' => array('conductrics_1_ajax_remove_token'),
+		    // See the examples in ajax_example.module for more details on the
+		    // properties of #ajax.
+		    '#attributes' => array('style' => 'margin-bottom:10px'),
+		    '#ajax' => array(
+		      'callback' => 'conductrics_1_ajax_remove_token_callback',
+		      'wrapper' => 'conductrics_ajax_tokens_wrapper',
+		    ),
+		  );
+	  }
+
+
+
 	  $form['submit'] = array(
 	    '#type' => 'submit',
 	    '#value' => 'Save Configuration',
@@ -357,6 +442,25 @@ function conductrics_1_preprocess_html(&$variables) {
 			}
 		}
 		$variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
+
+		// features
+		$features = array(); // will be an array of feature codes to pass to conductrics
+		$account_info = variable_get('conductrics_account_info');
+		if (isset($account_info['tokens'])) {
+			foreach ($account_info['tokens'] as $token_code => $token_item) { // for each token that has been configured as passable to Conductrics
+				// assume $token_code is a string in normal Drupal-style token format, for example: '[current-user:field-sport]'
+				$token_value = token_replace($token_code); // will now be the value of the token, or the value of $token_code if no replacement took place (unknown token)
+				if (!empty($token_value) && $token_value != $token_code) { // the token as a value
+					$prefix_with = empty($token_item['prefix']) ? '' : ($token_item['prefix'] . '-'); // The 'prefix' at this level is a cheap way to namespace the values that get returned by the tokens
+					foreach ( explode(',', $token_value) as $part) { // we might have a comma-separated list of values, as in "Football, Baseball, Soccer"
+						array_push($features, $prefix_with . trim($part));
+					}
+				}
+ 			}
+		}
+		if (count($features) > 0) {
+			$variables['attributes_array']['data-conductrics-features'] = implode(",", $features);
+		}
 	}
 }
 
@@ -384,6 +488,7 @@ function conductrics_1_admin_submit($form, &$form_state) {
 		'api_url' => $form_state['values']['conductrics_api_url'],
 		'console_url' => $form_state['values']['conductrics_console_url'],
 	);
+	$account_info['tokens'] = $form_state['tokens'];
 	variable_set('conductrics_account_info', $account_info);
 
 	foreach ($form_state['goal_codes'] as $goal_code) {
@@ -407,9 +512,36 @@ function conductrics_1_ajax_add_goal($form, &$form_state) {
   array_push($form_state['goal_codes'], $goal_code);
   $form_state['rebuild'] = TRUE;
 }
-
 function conductrics_1_ajax_add_goal_callback($form, $form_state) {
   return $form['goals'];
+}
+
+function conductrics_1_ajax_add_token($form, &$form_state) {
+  $token_code = $form_state['values']['tokens']['add']['token'];
+  $prefix = $form_state['values']['tokens']['add']['prefix'];
+  $valid = !empty($token_code); // TODO - validate properly
+  if ($valid) {
+	$form_state['tokens'][$token_code] = array(
+		'prefix' => $prefix,
+	);
+	$form_state['values']['tokens']['add']['token'] = '';
+	$form_state['values']['tokens']['add']['prefix'] = '';
+	$form_state['rebuild'] = TRUE;
+  }
+}
+function conductrics_1_ajax_add_token_callback($form, $form_state) {
+  return $form['tokens'];
+}
+function conductrics_1_ajax_remove_token($form, &$form_state) {
+	foreach ($form_state['values']['tokens']['existing']['tokens'] as $token_code => $value) {
+		if ($token_code == $value) {
+			unset($form_state['tokens'][$value]);
+			$form_state['rebuild'] = TRUE;
+		}
+	}
+}
+function conductrics_1_ajax_remove_token_callback($form, $form_state) {
+  return $form['tokens'];
 }
 
 function conductrics_1_goals_get() {
