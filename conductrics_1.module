@@ -8,106 +8,106 @@
 * Implements hook_bean_types_api_info().
 */
 function conductrics_1_bean_types_api_info() {
-	return array('api' => 4);
+  return array('api' => 4);
 }
 
 /**
 * Implements hook_init().
 */
 function conductrics_1_init() {
-	if (!path_is_admin(current_path())) {
-		$path = drupal_get_path('module', 'conductrics_1') . '/assets';
-		drupal_add_css($path.'/conductrics-experience.css', array('scope' => 'header') ); // include css before js (point is to avoid 'flicker')
-		drupal_add_js($path .'/conductrics.jquery.js', array('scope' => 'header') ); // relies on jquery
-		drupal_add_js($path .'/conductrics-experience.js', array('scope' => 'footer')); // relies on conductrics.jquery
+  if (!path_is_admin(current_path())) {
+    $path = drupal_get_path('module', 'conductrics_1') . '/assets';
+    drupal_add_css($path.'/conductrics-experience.css', array('scope' => 'header') ); // include css before js (point is to avoid 'flicker')
+    drupal_add_js($path .'/conductrics.jquery.js', array('scope' => 'header') ); // relies on jquery
+    drupal_add_js($path .'/conductrics-experience.js', array('scope' => 'footer')); // relies on conductrics.jquery
 
-		$account_info = variable_get('conductrics_account_info');
-		$conductrics_jquery_options = array(
-			'conductrics-jquery' => array(
-				'owner' => $account_info['owner_code'],
-				'apiKey' => $account_info['api_key'],
-				'baseUrl' => !empty($account_info['api_url']) ? $account_info['api_url'] : 'https://api.conductrics.com',
-			)
-		);
-		drupal_add_js($conductrics_jquery_options, 'setting');
-	}
+    $account_info = variable_get('conductrics_account_info');
+    $conductrics_jquery_options = array(
+      'conductrics-jquery' => array(
+        'owner' => $account_info['owner_code'],
+        'apiKey' => $account_info['api_key'],
+        'baseUrl' => !empty($account_info['api_url']) ? $account_info['api_url'] : 'https://api.conductrics.com',
+      )
+    );
+    drupal_add_js($conductrics_jquery_options, 'setting');
+  }
 }
 
 /**
 * Implements hook_bean_types().
 */
 function conductrics_1_bean_types() {
-	$plugins = array();
-	$plugins['conductrics_block'] = array(
-		'label' => t('Conductrics Selection'), //note this appears as the Heading when creating a new block of this type
-		'description' => t('Container for a Conductrics test or targeting/optimization.'),
-		'handler' => array(
-			'class' => 'ConductricsBlockBean',
-			'parent' => 'bean',
-			'path' => drupal_get_path('module', 'conductrics_1') . '/plugins/bean',
-			'file' => 'conductrics_1.conductrics_block.inc',
-		),
-	);
-	return $plugins;
+  $plugins = array();
+  $plugins['conductrics_block'] = array(
+    'label' => t('Conductrics Selection'), //note this appears as the Heading when creating a new block of this type
+    'description' => t('Container for a Conductrics test or targeting/optimization.'),
+    'handler' => array(
+      'class' => 'ConductricsBlockBean',
+      'parent' => 'bean',
+      'path' => drupal_get_path('module', 'conductrics_1') . '/plugins/bean',
+      'file' => 'conductrics_1.conductrics_block.inc',
+    ),
+  );
+  return $plugins;
 }
 
 function conductrics_1_bean_submit(&$bean, &$form, &$form_state) {
-	$values = $form_state['values'];
+  $values = $form_state['values'];
 
-	if ($bean->type != 'conductrics_block') {
-		return;
-	}
+  if ($bean->type != 'conductrics_block') {
+    return;
+  }
 
-	$experiences = array();
-	if ($values['selection_mode'] == 'block-vis') {
-		$str = $values['block_vis']['block'];
-		$experiences['block-visible'] = array(
-			'blocks' => array( conductrics_1_str_to_block_data($str) ),
-		);
-		$experiences['block-hidden'] = array(
-			'blocks' => array(),
-		);
-	} else if ($values['selection_mode'] == 'block-swap') {
-		for ($num = 1; $num <= 4; $num++) {
-			$str = $values['block_swap']["block_$num"];
-			if (!empty($str)) {
-				$experiences["block-$num"] = array(
-					'blocks' => array( conductrics_1_str_to_block_data($str) ),
-				);
-			}
-		};
-	};
+  $experiences = array();
+  if ($values['selection_mode'] == 'block-vis') {
+    $str = $values['block_vis']['block'];
+    $experiences['block-visible'] = array(
+      'blocks' => array( conductrics_1_str_to_block_data($str) ),
+    );
+    $experiences['block-hidden'] = array(
+      'blocks' => array(),
+    );
+  } else if ($values['selection_mode'] == 'block-swap') {
+    for ($num = 1; $num <= 4; $num++) {
+      $str = $values['block_swap']["block_$num"];
+      if (!empty($str)) {
+        $experiences["block-$num"] = array(
+          'blocks' => array( conductrics_1_str_to_block_data($str) ),
+        );
+      }
+    };
+  };
 
-	$form_state['values']['settings'] = array(
-		'agent_code' => $values['agent_code'],
-		'selection_mode' => $values['selection_mode'],
-	);
-	$form_state['values']['experiences'] = $experiences;
-	conductrics_1_goals_associate( $form_state['values']['agent_code'], $form_state['values']['goals'] );
-	unset($form_state['values']['agent_code']);
-	unset($form_state['values']['selection_mode']);
+  $form_state['values']['settings'] = array(
+    'agent_code' => $values['agent_code'],
+    'selection_mode' => $values['selection_mode'],
+  );
+  $form_state['values']['experiences'] = $experiences;
+  conductrics_1_goals_associate( $form_state['values']['agent_code'], $form_state['values']['goals'] );
+  unset($form_state['values']['agent_code']);
+  unset($form_state['values']['selection_mode']);
 }
 
 function conductrics_1_str_to_block_data($str) {
-	$parts = explode(':', $str);
-	$block_data = array(
-		'module' => $parts[0],
-		'delta' => $parts[1],
-	);
-	return $block_data;
+  $parts = explode(':', $str);
+  $block_data = array(
+    'module' => $parts[0],
+    'delta' => $parts[1],
+  );
+  return $block_data;
 }
 
 function conductrics_1_block_data_to_str($block_data) {
-	if (isset($block_data['module']) && isset($block_data['delta'])) {
-		return $block_data['module'] . ':' . $block_data['delta'];
-	}
-	return FALSE;
+  if (isset($block_data['module']) && isset($block_data['delta'])) {
+    return $block_data['module'] . ':' . $block_data['delta'];
+  }
+  return FALSE;
 }
 function conductrics_1_block_str_valid($str) {
-	return preg_match('/^[0-9A-Za-z_-]+\:[0-9A-Za-z_-]+$/', $str);
+  return preg_match('/^[0-9A-Za-z_-]+\:[0-9A-Za-z_-]+$/', $str);
 }
 function conductrics_1_code_valid($str) {
-	return preg_match('/^[0-9A-Za-z_-]+$/', $str);
+  return preg_match('/^[0-9A-Za-z_-]+$/', $str);
 }
 
 /**
@@ -126,10 +126,10 @@ function conductrics_1_menu() {
    );
 
   $items['autocomplete/blocks'] = array(
-  	'title' => t('Conductrics AJAX Callback - Blocks'),
-  	'page callback' => 'conductrics_1_autocomplete_blocks',
+    'title' => t('Conductrics AJAX Callback - Blocks'),
+    'page callback' => 'conductrics_1_autocomplete_blocks',
     'access arguments' => array('administer conductrics_1 settings'),
-  	'type' => MENU_CALLBACK,
+    'type' => MENU_CALLBACK,
   );
 
   return $items;
@@ -160,353 +160,345 @@ function conductrics_1_theme() {
 }
 
 function conductrics_1_admin($form, &$form_state) {
-	$account_info = variable_get('conductrics_account_info');
-	$account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
+  $account_info = variable_get('conductrics_account_info');
+  $account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
 
-	$form['account'] = array(
-		'#type' => 'fieldset',
-		'#title' => 'Conductrics Account Settings',
-		'#collapsible' => TRUE,
-		'#collapsed' => $account_info_provided
-	);
+  $form['account'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Conductrics Account Settings',
+    '#collapsible' => TRUE,
+    '#collapsed' => $account_info_provided
+  );
 
-	$form['account']['msg'] = array(
-		'#markup' => t("<p>This information is used to 'link' your Conductrics account to Drupal.</p><p>You can find these codes by logging into your Conductrics account and going to the Account > Password and Keys page.</p><p>If you don't have a Conductrics account, you can get one now by signing up at <a href='http://conductrics.com' target='_blank'>http://conductrics.com</a> (free signup).</p>"),
-	);
+  $form['account']['msg'] = array(
+    '#markup' => t("<p>This information is used to 'link' your Conductrics account to Drupal.</p><p>You can find these codes by logging into your Conductrics account and going to the Account > Password and Keys page.</p><p>If you don't have a Conductrics account, you can get one now by signing up at <a href='http://conductrics.com' target='_blank'>http://conductrics.com</a> (free signup).</p>"),
+  );
 
-	$form['account']['conductrics_owner_code'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Owner Code'),
-		'#default_value' => $account_info['owner_code'],
-		'#size' => 35,
-		'#maxlength' => 50,
-		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'owner')"),
-		'#required' => TRUE,
-	);
+  $form['account']['conductrics_owner_code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Owner Code'),
+    '#default_value' => $account_info['owner_code'],
+    '#size' => 35,
+    '#maxlength' => 50,
+    '#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'owner')"),
+    '#required' => TRUE,
+  );
 
-	$form['account']['conductrics_api_key'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Runtime API Key'),
-		'#default_value' => $account_info['api_key'],
-		'#size' => 35,
-		'#maxlength' => 50,
-		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'api')"),
-		'#required' => TRUE,
-	);
+  $form['account']['conductrics_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Runtime API Key'),
+    '#default_value' => $account_info['api_key'],
+    '#size' => 35,
+    '#maxlength' => 50,
+    '#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'api')"),
+    '#required' => TRUE,
+  );
 
-	$form['account']['conductrics_admin_key'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Admin API Key'),
-		'#default_value' => $account_info['admin_key'],
-		'#size' => 35,
-		'#maxlength' => 50,
-		'#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'admin')"),
-		'#required' => TRUE,
-	);
+  $form['account']['conductrics_admin_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Admin API Key'),
+    '#default_value' => $account_info['admin_key'],
+    '#size' => 35,
+    '#maxlength' => 50,
+    '#description' => t("Paste in from the Account > Keys page in Conductrics Console (starts with 'admin')"),
+    '#required' => TRUE,
+  );
 
-	$form['account']['servers'] = array(
-		'#type' => 'fieldset',
-		'#title' => 'Conductrics Server Settings',
-		'#collapsible' => TRUE,
-		'#collapsed' => TRUE,
-	);
+  $form['account']['servers'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Conductrics Server Settings',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
 
-	$form['account']['servers']['msg'] = array(
-		'#markup' => t('Normally these fields should be left blank, unless you have specific instructions from Conductrics to use a private server or particular beta/update server.'),
-	);
+  $form['account']['servers']['msg'] = array(
+    '#markup' => t('Normally these fields should be left blank, unless you have specific instructions from Conductrics to use a private server or particular beta/update server.'),
+  );
 
-	$form['account']['servers']['conductrics_api_url'] = array(
-		'#type' => 'textfield',
-		'#title' => t('API Server URL (optional)'),
-		'#default_value' => $account_info['api_url'],
-		'#size' => 35,
-		'#maxlength' => 50,
-		'#description' => t("Adjust this URL only if using a custom server from Conductrics."),
-		'#required' => FALSE,
-	);
+  $form['account']['servers']['conductrics_api_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API Server URL (optional)'),
+    '#default_value' => $account_info['api_url'],
+    '#size' => 35,
+    '#maxlength' => 50,
+    '#description' => t("Adjust this URL only if using a custom server from Conductrics."),
+    '#required' => FALSE,
+  );
 
-	$form['account']['servers']['conductrics_console_url'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Console URL (optional)'),
-		'#default_value' => $account_info['console_url'],
-		'#size' => 35,
-		'#maxlength' => 50,
-		'#description' => t("Adjust this URL only if using a custom server from Conductrics."),
-		'#required' => FALSE,
-	);
+  $form['account']['servers']['conductrics_console_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Console URL (optional)'),
+    '#default_value' => $account_info['console_url'],
+    '#size' => 35,
+    '#maxlength' => 50,
+    '#description' => t("Adjust this URL only if using a custom server from Conductrics."),
+    '#required' => FALSE,
+  );
 
-	$goals = conductrics_1_goals_get();
-	$form['goals'] = array(
-		'#type' => 'fieldset',
-		'#title' => 'Goals',
-		'#prefix' => '<div id="conductrics_ajax_goals_wrapper">',
-		'#suffix' => '</div>',
-		'#tree' => TRUE,
-	);
+  $goals = conductrics_1_goals_get();
+  $form['goals'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Goals',
+    '#prefix' => '<div id="conductrics_ajax_goals_wrapper">',
+    '#suffix' => '</div>',
+    '#tree' => TRUE,
+  );
 
-	$form['goals']['msg'] = array(
-		'#markup' => t("<p>You should specify at least one page that should be considered a 'Goal' for your site.</p>"),
-	);
-	if (empty($form_state['goal_codes'])) {
-		$form_state['goal_codes'] = array_keys($goals);
-	}
+  $form['goals']['msg'] = array(
+    '#markup' => t("<p>You should specify at least one page that should be considered a 'Goal' for your site.</p>"),
+  );
+  if (empty($form_state['goal_codes'])) {
+    $form_state['goal_codes'] = array_keys($goals);
+  }
 
-	foreach ($form_state['goal_codes'] as $goal_code) {
-		if ( isset($form_state['values']["remove_$goal_code"]) ) {
-			conductrics_1_goal_remove($goal_code);
-			continue;
-		}
+  foreach ($form_state['goal_codes'] as $goal_code) {
+    if ( isset($form_state['values']["remove_$goal_code"]) ) {
+      conductrics_1_goal_remove($goal_code);
+      continue;
+    }
 
-		if (isset($goals[$goal_code])) {
-			$goal = $goals[$goal_code];
-		} else {
-			$goal = array(
-				'urls' => array('*'),
-			);
-		}
+    if (isset($goals[$goal_code])) {
+      $goal = $goals[$goal_code];
+    } else {
+      $goal = array(
+        'urls' => array('*'),
+      );
+    }
 
-		$form['goals'][$goal_code] = array(
-			'#type' => 'fieldset',
-			'#attributes' => array('class' => array('container-inline')),
-		);
-		$form['goals'][$goal_code]['goal_code'] = array(
-			'#type' => 'textfield',
-			'#title' => t('Goal'),
-			'#default_value' => $goal_code,
-			'#size' => 8,
-			'#maxlength' => 50,
-			'#disabled' => isset($goals[$goal_code]),
-			'#required' => TRUE,
-		);
-		$form['goals'][$goal_code]['value'] = array(
-			'#type' => 'textfield',
-			'#title' => t('valued at'),
-			'#default_value' => isset($goal['value']) ? $goal['value'] : 1,
-			'#size' => 2,
-			'#required' => TRUE,
-		);
-		$form['goals'][$goal_code]['goal_mode'] = array(
-			'#type' => 'select',
-			'#default_value' => $goal['goal_mode'],
-			'#title' => 'occurs',
-			'#options' => array(
-				'page-load' => "on page load",
-			),
-			'#default_value' => 'page-load',
-			'#required' => TRUE,
-		);
-		$form['goals'][$goal_code]['urls'] = array(
-			'#type' => 'textfield',
-			'#title' => t('if alias matches'),
-			'#default_value' => implode(',', $goal['urls']), // TODO better to provide multiple patterns - for now assume commas separate patterns
-			'#size' => 20,
-			'#maxlength' => 500,
-			'#required' => TRUE,
-		);
-		$form['goals'][$goal_code]['remove'] = array(
-			'#type' => 'button',
-			'#value' => t('x'),
-			'#name' => "remove_$goal_code",
-		);
-	}
+    $form['goals'][$goal_code] = array(
+      '#type' => 'fieldset',
+      '#attributes' => array('class' => array('container-inline')),
+    );
+    $form['goals'][$goal_code]['goal_code'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Goal'),
+      '#default_value' => $goal_code,
+      '#size' => 8,
+      '#maxlength' => 50,
+      '#disabled' => isset($goals[$goal_code]),
+      '#required' => TRUE,
+    );
+    $form['goals'][$goal_code]['value'] = array(
+      '#type' => 'textfield',
+      '#title' => t('valued at'),
+      '#default_value' => isset($goal['value']) ? $goal['value'] : 1,
+      '#size' => 2,
+      '#required' => TRUE,
+    );
+    $form['goals'][$goal_code]['goal_mode'] = array(
+      '#type' => 'select',
+      '#default_value' => $goal['goal_mode'],
+      '#title' => 'occurs',
+      '#options' => array(
+        'page-load' => "on page load",
+      ),
+      '#default_value' => 'page-load',
+      '#required' => TRUE,
+    );
+    $form['goals'][$goal_code]['urls'] = array(
+      '#type' => 'textfield',
+      '#title' => t('if alias matches'),
+      '#default_value' => implode(',', $goal['urls']), // TODO better to provide multiple patterns - for now assume commas separate patterns
+      '#size' => 20,
+      '#maxlength' => 500,
+      '#required' => TRUE,
+    );
+    $form['goals'][$goal_code]['remove'] = array(
+      '#type' => 'button',
+      '#value' => t('x'),
+      '#name' => "remove_$goal_code",
+    );
+  }
 
-	$form['goals']['msg_2'] = array(
-		'#markup' => t("<p>You can use <code>*</code> as a wildcard, such as <code>/content/special/*</code> if the business goal for your site were to get users to view pages in the 'special' section.</p>"),
-	);
+  $form['goals']['msg_2'] = array(
+    '#markup' => t("<p>You can use <code>*</code> as a wildcard, such as <code>/content/special/*</code> if the business goal for your site were to get users to view pages in the 'special' section.</p>"),
+  );
 
-	  $form['goals']['add_goal'] = array(
-	    '#type' => 'submit',
-	    '#value' => t('Add Another Goal'),
-	    '#submit' => array('conductrics_1_ajax_add_goal'),
-	    // See the examples in ajax_example.module for more details on the
-	    // properties of #ajax.
-	    '#attributes' => array('style' => 'margin-bottom:10px'),
-	    '#ajax' => array(
-	      'callback' => 'conductrics_1_ajax_add_goal_callback',
-	      'wrapper' => 'conductrics_ajax_goals_wrapper',
-	    ),
-	  );
+  $form['goals']['add_goal'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add Another Goal'),
+    '#submit' => array('conductrics_1_ajax_add_goal'),
+    // See the examples in ajax_example.module for more details on the
+    // properties of #ajax.
+    '#attributes' => array('style' => 'margin-bottom:10px'),
+    '#ajax' => array(
+      'callback' => 'conductrics_1_ajax_add_goal_callback',
+      'wrapper' => 'conductrics_ajax_goals_wrapper',
+    ),
+  );
 
+  /* TOKENS */
+  if (!isset($form_state['tokens'])) {
+    $form_state['tokens'] = isset($account_info['tokens']) ? $account_info['tokens'] : array();
+  }
+  $form['tokens'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Tokens for Targeting',
+    '#prefix' => '<div id="conductrics_ajax_tokens_wrapper">',
+    '#suffix' => '</div>',
+    '#tree' => TRUE,
+  );
+  $form['tokens']['msg'] = array(
+    '#markup' => "<p>You may pass one or more values from the user's profile to your Conductrics agents, which they will use as targeting features to inform reporting and optimization.</p>",
+  );
 
+  $form['tokens']['add'] = array(
+    '#type' => 'fieldset',
+    '#attributes' => array('class' => array('container-inline')),
+  );
 
-	/* TOKENS */
-	if (!isset($form_state['tokens'])) {
-		$form_state['tokens'] = isset($account_info['tokens']) ? $account_info['tokens'] : array();
-	}
+  $form['tokens']['add']['token'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Pass value of token'),
+    '#default_value' => '',
+    '#size' => 30,
+    '#maxlength' => 100,
+    '#required' => FALSE,
+  );
+  $form['tokens']['add']['prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('with prefix'),
+    '#default_value' => '',
+    '#size' => 10,
+    '#maxlength' => 20,
+    '#required' => FALSE,
+  );
 
-	$form['tokens'] = array(
-		'#type' => 'fieldset',
-		'#title' => 'Tokens for Targeting',
-		'#prefix' => '<div id="conductrics_ajax_tokens_wrapper">',
-		'#suffix' => '</div>',
-		'#tree' => TRUE,
-	);
-	$form['tokens']['msg'] = array(
-		'#markup' => "<p>You may pass one or more values from the user's profile to your Conductrics agents, which they will use as targeting features to inform reporting and optimization.</p>",
-	);
+  $form['tokens']['add']['btn'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add'),
+    '#submit' => array('conductrics_1_ajax_add_token'),
+    // See the examples in ajax_example.module for more details on the
+    // properties of #ajax.
+    '#attributes' => array('style' => 'margin-bottom:10px'),
+    '#ajax' => array(
+      'callback' => 'conductrics_1_ajax_add_token_callback',
+      'wrapper' => 'conductrics_ajax_tokens_wrapper',
+    ),
+  );
 
-	$form['tokens']['add'] = array(
-		'#type' => 'fieldset',
-		'#attributes' => array('class' => array('container-inline')),
-	);
+  if ( count($form_state['tokens']) > 0) {
+    $options = array_merge(array(), $form_state['tokens']);
+    foreach ($options as $code => &$value) {
+      $value['token'] = $code;
+    }
+    $form['tokens']['existing']['tokens'] = array(
+      '#type' => 'tableselect',
+      '#options' => $options,
+      '#attributes' => array('style' => array('max-width:700px')),
+      '#hidden' => count($options) == 0,
+      '#header' => array(
+        'token' => array( 'data' => t('Existing Token'), 'width' => '70%' ),
+        'prefix' => array( 'data' => t('Prefix'), 'width' => '30%' ),
+      ),
+    );
 
-	  $form['tokens']['add']['token'] = array(
-		'#type' => 'textfield',
-		'#title' => t('Pass value of token'),
-		'#default_value' => '',
-		'#size' => 30,
-		'#maxlength' => 100,
-		'#required' => FALSE,
-	  );
-	  $form['tokens']['add']['prefix'] = array(
-		'#type' => 'textfield',
-		'#title' => t('with prefix'),
-		'#default_value' => '',
-		'#size' => 10,
-		'#maxlength' => 20,
-		'#required' => FALSE,
-	  );
+    $form['tokens']['existing']['btn'] = array(
+      '#type' => 'submit',
+      '#value' => t('Remove Selected'),
+      '#submit' => array('conductrics_1_ajax_remove_token'),
+      // See the examples in ajax_example.module for more details on the
+      // properties of #ajax.
+      '#attributes' => array('style' => 'margin-bottom:10px'),
+      '#ajax' => array(
+        'callback' => 'conductrics_1_ajax_remove_token_callback',
+        'wrapper' => 'conductrics_ajax_tokens_wrapper',
+      ),
+    );
+  }
 
-	  $form['tokens']['add']['btn'] = array(
-	    '#type' => 'submit',
-	    '#value' => t('Add'),
-	    '#submit' => array('conductrics_1_ajax_add_token'),
-	    // See the examples in ajax_example.module for more details on the
-	    // properties of #ajax.
-	    '#attributes' => array('style' => 'margin-bottom:10px'),
-	    '#ajax' => array(
-	      'callback' => 'conductrics_1_ajax_add_token_callback',
-	      'wrapper' => 'conductrics_ajax_tokens_wrapper',
-	    ),
-	  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save Configuration',
+    '#prefix' => '</p>', // wrap with <p> to fix lack of spacing under button
+    '#suffix' => '</p>',
+  );
 
-	  $options = array();
-	  foreach ($form_state['tokens'] as $code => $value) {
-	  	$options[$code] = array(
-	  		'token' => $code,
-	  		'prefix' => $value['prefix'],
-	  	);
-	  }
-	  if ( count($options) > 0) {
-		  $form['tokens']['existing']['tokens'] = array(
-		  	'#type' => 'tableselect',
-	  		'#options' => $options,
-	  		'#attributes' => array('style' => array('max-width:700px')),
-	  		'#hidden' => count($options) == 0,
-		  	'#header' => array(
-		  		'token' => array( 'data' => t('Existing Token'), 'width' => '70%' ),
-		  		'prefix' => array( 'data' => t('Prefix'), 'width' => '30%' ),
-		  	),
-		  );
-
-		  $form['tokens']['existing']['btn'] = array(
-		    '#type' => 'submit',
-		    '#value' => t('Remove Selected'),
-		    '#submit' => array('conductrics_1_ajax_remove_token'),
-		    // See the examples in ajax_example.module for more details on the
-		    // properties of #ajax.
-		    '#attributes' => array('style' => 'margin-bottom:10px'),
-		    '#ajax' => array(
-		      'callback' => 'conductrics_1_ajax_remove_token_callback',
-		      'wrapper' => 'conductrics_ajax_tokens_wrapper',
-		    ),
-		  );
-	  }
-
-
-
-	  $form['submit'] = array(
-	    '#type' => 'submit',
-	    '#value' => 'Save Configuration',
-	    '#prefix' => '</p>', // wrap with <p> to fix lack of spacing under button
-	    '#suffix' => '</p>',
-	  );
-
-	return $form;
+  return $form;
 }
 
 function conductrics_1_preprocess_html(&$variables) {
-	if (!path_is_admin(current_path())) {
-		$goals = conductrics_1_goals_get();
-		$goal_strs = array();
-		foreach ($goals as $goal_code => $goal_item) {
-			$goal_relevant_here = false;
-			if ($goal_item['goal_mode'] == 'page-load') {
-				foreach ($goal_item['urls'] as $url) {
-					if ( fnmatch($url, request_path()) ) {
-						$goal_relevant_here = true;
-					}
-				}
-			}
-			if ($goal_relevant_here) {
-				foreach ($goal_item['agents'] as $agent_code) {
-					array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
-				}
-			}
-		}
-		$variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
+  if (!path_is_admin(current_path())) {
+    $goals = conductrics_1_goals_get();
+    $goal_strs = array();
+    foreach ($goals as $goal_code => $goal_item) {
+      $goal_relevant_here = false;
+      if ($goal_item['goal_mode'] == 'page-load') {
+        foreach ($goal_item['urls'] as $url) {
+          if ( fnmatch($url, request_path()) ) {
+            $goal_relevant_here = true;
+          }
+        }
+      }
+      if ($goal_relevant_here) {
+        foreach ($goal_item['agents'] as $agent_code) {
+          array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
+        }
+      }
+    }
+    $variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
 
-		// features
-		$features = array(); // will be an array of feature codes to pass to conductrics
-		$account_info = variable_get('conductrics_account_info');
-		if (isset($account_info['tokens'])) {
-			foreach ($account_info['tokens'] as $token_code => $token_item) { // for each token that has been configured as passable to Conductrics
-				// assume $token_code is a string in normal Drupal-style token format, for example: '[current-user:field-sport]'
-				$token_value = token_replace($token_code); // will now be the value of the token, or the value of $token_code if no replacement took place (unknown token)
-				if (!empty($token_value) && $token_value != $token_code) { // the token as a value
-					$prefix_with = empty($token_item['prefix']) ? '' : ($token_item['prefix'] . '-'); // The 'prefix' at this level is a cheap way to namespace the values that get returned by the tokens
-					foreach ( explode(',', $token_value) as $part) { // we might have a comma-separated list of values, as in "Football, Baseball, Soccer"
-						array_push($features, $prefix_with . trim($part));
-					}
-				}
- 			}
-		}
-		if (count($features) > 0) {
-			$variables['attributes_array']['data-conductrics-features'] = implode(",", $features);
-		}
-	}
+    // features
+    $features = array(); // will be an array of feature codes to pass to conductrics
+    $account_info = variable_get('conductrics_account_info');
+    if (isset($account_info['tokens'])) {
+      foreach ($account_info['tokens'] as $token_code => $token_item) { // for each token that has been configured as passable to Conductrics
+        // assume $token_code is a string in normal Drupal-style token format, for example: '[current-user:field-sport]'
+        $token_value = token_replace($token_code); // will now be the value of the token, or the value of $token_code if no replacement took place (unknown token)
+        if (!empty($token_value) && $token_value != $token_code) { // the token as a value
+          $prefix_with = empty($token_item['prefix']) ? '' : ($token_item['prefix'] . '-'); // The 'prefix' at this level is a cheap way to namespace the values that get returned by the tokens
+          foreach ( explode(',', $token_value) as $part) { // we might have a comma-separated list of values, as in "Football, Baseball, Soccer"
+            array_push($features, $prefix_with . trim($part));
+          }
+        }
+      }
+    }
+    if (count($features) > 0) {
+      $variables['attributes_array']['data-conductrics-features'] = implode(",", $features);
+    }
+  }
 }
 
 function conductrics_1_admin_validate($form, &$form_state) {
-	if (!conductrics_1_code_valid($form_state['values']['conductrics_owner_code'])) {
-		form_set_error('conductrics_owner_code', "Invalid owner code");
-	}
-	foreach ($form_state['goal_codes'] as $goal_code) {
-		if (isset($form_state['values']['goals'][$goal_code])) {
-			$fieldset = $form_state['values']['goals'][$goal_code];
-			if (!conductrics_1_code_valid($fieldset['goal_code'])) {
-				form_set_error('', "Invalid goal code for '$goal_code'");
-			}
-			if (!is_numeric($fieldset['value'])) {
-				form_set_error('', "Invalid value provided for '$goal_code' (must be numeric)");
-			}
-		}
-	}
+  if (!conductrics_1_code_valid($form_state['values']['conductrics_owner_code'])) {
+    form_set_error('conductrics_owner_code', "Invalid owner code");
+  }
+  foreach ($form_state['goal_codes'] as $goal_code) {
+    if (isset($form_state['values']['goals'][$goal_code])) {
+      $fieldset = $form_state['values']['goals'][$goal_code];
+      if (!conductrics_1_code_valid($fieldset['goal_code'])) {
+        form_set_error('', "Invalid goal code for '$goal_code'");
+      }
+      if (!is_numeric($fieldset['value'])) {
+        form_set_error('', "Invalid value provided for '$goal_code' (must be numeric)");
+      }
+    }
+  }
 }
 function conductrics_1_admin_submit($form, &$form_state) {
-	$account_info = array(
-		'owner_code' => $form_state['values']['conductrics_owner_code'],
-		'api_key' => $form_state['values']['conductrics_api_key'],
-		'admin_key' => $form_state['values']['conductrics_admin_key'],
-		'api_url' => $form_state['values']['conductrics_api_url'],
-		'console_url' => $form_state['values']['conductrics_console_url'],
-	);
-	$account_info['tokens'] = $form_state['tokens'];
-	variable_set('conductrics_account_info', $account_info);
+  $account_info = array(
+    'owner_code' => $form_state['values']['conductrics_owner_code'],
+    'api_key' => $form_state['values']['conductrics_api_key'],
+    'admin_key' => $form_state['values']['conductrics_admin_key'],
+    'api_url' => $form_state['values']['conductrics_api_url'],
+    'console_url' => $form_state['values']['conductrics_console_url'],
+  );
+  $account_info['tokens'] = $form_state['tokens'];
+  variable_set('conductrics_account_info', $account_info);
 
-	foreach ($form_state['goal_codes'] as $goal_code) {
-		if (isset($form_state['values']['goals'][$goal_code])) {
-			$fieldset = $form_state['values']['goals'][$goal_code];
-			$data = array(
-				'goal_mode' => $fieldset['goal_mode'],
-				'value' => $fieldset['value'],
-			);
-			if ($data['goal_mode'] == 'page-load') {
-				$data['urls'] = explode(',', $fieldset['urls']); // TODO better to provide multiple patterns - for now assume commas separate patterns
-			}
-			conductrics_1_goal_update($goal_code, $data);
-		}
-	}
+  foreach ($form_state['goal_codes'] as $goal_code) {
+    if (isset($form_state['values']['goals'][$goal_code])) {
+      $fieldset = $form_state['values']['goals'][$goal_code];
+      $data = array(
+        'goal_mode' => $fieldset['goal_mode'],
+        'value' => $fieldset['value'],
+      );
+      if ($data['goal_mode'] == 'page-load') {
+        $data['urls'] = explode(',', $fieldset['urls']); // TODO better to provide multiple patterns - for now assume commas separate patterns
+      }
+      conductrics_1_goal_update($goal_code, $data);
+    }
+  }
 }
 
 function conductrics_1_ajax_add_goal($form, &$form_state) {
@@ -524,115 +516,115 @@ function conductrics_1_ajax_add_token($form, &$form_state) {
   $prefix = $form_state['values']['tokens']['add']['prefix'];
   $valid = !empty($token_code); // TODO - validate properly
   if ($valid) {
-	$form_state['tokens'][$token_code] = array(
-		'prefix' => $prefix,
-	);
-	$form_state['values']['tokens']['add']['token'] = '';
-	$form_state['values']['tokens']['add']['prefix'] = '';
-	$form_state['rebuild'] = TRUE;
+  $form_state['tokens'][$token_code] = array(
+    'prefix' => $prefix,
+  );
+  $form_state['values']['tokens']['add']['token'] = '';
+  $form_state['values']['tokens']['add']['prefix'] = '';
+  $form_state['rebuild'] = TRUE;
   }
 }
 function conductrics_1_ajax_add_token_callback($form, $form_state) {
   return $form['tokens'];
 }
 function conductrics_1_ajax_remove_token($form, &$form_state) {
-	foreach ($form_state['values']['tokens']['existing']['tokens'] as $token_code => $value) {
-		if ($token_code == $value) {
-			unset($form_state['tokens'][$value]);
-			$form_state['rebuild'] = TRUE;
-		}
-	}
+  foreach ($form_state['values']['tokens']['existing']['tokens'] as $token_code => $value) {
+    if ($token_code == $value) {
+      unset($form_state['tokens'][$value]);
+      $form_state['rebuild'] = TRUE;
+    }
+  }
 }
 function conductrics_1_ajax_remove_token_callback($form, $form_state) {
   return $form['tokens'];
 }
 
 function conductrics_1_goals_get() {
-	$goals = variable_get('conductrics_goals');
-	if (!isset($goals) || count($goals) == 0) {
-		$goals = array(
-			'any-page' => array(
-				'agents' => array(),
-				'goal_mode' => 'page-load',
-				'urls' => array('*'),
-				'value' => 1,
-			),
-		);
-	}
-	return $goals;
+  $goals = variable_get('conductrics_goals');
+  if (!isset($goals) || count($goals) == 0) {
+    $goals = array(
+      'any-page' => array(
+        'agents' => array(),
+        'goal_mode' => 'page-load',
+        'urls' => array('*'),
+        'value' => 1,
+      ),
+    );
+  }
+  return $goals;
 }
 function conductrics_1_goals_set($goals) {
-	variable_set('conductrics_goals', $goals);
+  variable_set('conductrics_goals', $goals);
 }
 
 function conductrics_1_goal_update($goal_code, $data) {
-	$goals = conductrics_1_goals_get();
-	if ( !isset($goals[$goal_code]) ) {
-		$goals[$goal_code] = array(
-			'agents' => array(), // maintained via conductrics_1_goals_associate
-		);
-	}
-	foreach ($data as $key => $value) {
-		$goals[$goal_code][$key] = $data[$key];
-	}
- 	conductrics_1_goals_set($goals);
+  $goals = conductrics_1_goals_get();
+  if ( !isset($goals[$goal_code]) ) {
+    $goals[$goal_code] = array(
+      'agents' => array(), // maintained via conductrics_1_goals_associate
+    );
+  }
+  foreach ($data as $key => $value) {
+    $goals[$goal_code][$key] = $data[$key];
+  }
+  conductrics_1_goals_set($goals);
 }
 function conductrics_1_goal_remove($goal_code) {
-	$goals = conductrics_1_goals_get();
-	unset($goals[$goal_code]);
-	conductrics_1_goals_set($goals);
+  $goals = conductrics_1_goals_get();
+  unset($goals[$goal_code]);
+  conductrics_1_goals_set($goals);
 }
 function conductrics_1_goals_associate($agent_code, $goal_selections) {
-	$goals = conductrics_1_goals_get();
-	foreach ($goals as $goal_code => &$goal_item) {
-		if ( isset($goal_selections[$goal_code]) && $goal_selections[$goal_code] ) { // user wants an association
-			if ( !in_array($agent_code, $goal_item['agents']) ) { // and there is no association now
-				array_push($goal_item['agents'], $agent_code);
-			}
-		} else { // user doesn't want an association
-			if ( in_array($agent_code, $goal_item['agents']) ) { // and there is an association now
-				$offset = array_search($agent_code, $goal_item['agents']);
-				array_splice($goal_item['agents'], $offset, 1);
-			}
-		}
-	}
-	conductrics_1_goals_set($goals);
+  $goals = conductrics_1_goals_get();
+  foreach ($goals as $goal_code => &$goal_item) {
+    if ( isset($goal_selections[$goal_code]) && $goal_selections[$goal_code] ) { // user wants an association
+      if ( !in_array($agent_code, $goal_item['agents']) ) { // and there is no association now
+        array_push($goal_item['agents'], $agent_code);
+      }
+    } else { // user doesn't want an association
+      if ( in_array($agent_code, $goal_item['agents']) ) { // and there is an association now
+        $offset = array_search($agent_code, $goal_item['agents']);
+        array_splice($goal_item['agents'], $offset, 1);
+      }
+    }
+  }
+  conductrics_1_goals_set($goals);
 }
 
 function conductrics_1_autocomplete_blocks($filter) {
-	$items = conductrics_1_blocks_matching($filter);
-	return drupal_json_output($items);
+  $items = conductrics_1_blocks_matching($filter);
+  return drupal_json_output($items);
 }
 
 function conductrics_1_blocks_matching($criteria) {
-	$theme = 'demonstratie'; // TODO - pass in somehow
-	$results = array();
-	$blocks = _block_rehash($theme);
-	foreach ($blocks as $block) {
-		$module = $block['module'];
-		$delta = $block['delta'];
-		$identifier = "$module:$delta";
-		if ($criteria == '' or stristr($module, $criteria) or stristr($delta, $criteria) ) {
-			$results[$identifier] = "Block '$delta' from module '$module'";
-		}
-	}
-	return $results;
+  $theme = 'demonstratie'; // TODO - pass in somehow
+  $results = array();
+  $blocks = _block_rehash($theme);
+  foreach ($blocks as $block) {
+    $module = $block['module'];
+    $delta = $block['delta'];
+    $identifier = "$module:$delta";
+    if ($criteria == '' or stristr($module, $criteria) or stristr($delta, $criteria) ) {
+      $results[$identifier] = "Block '$delta' from module '$module'";
+    }
+  }
+  return $results;
 }
 
 // Gets a list of all eligible blocks from the database.
 // adapted from _block_load_blocks (see https://api.drupal.org/api/drupal/modules%21block%21block.module/function/_block_load_blocks/7)
 function conductrics_1_block_list() {
-	$query = db_select('block', 'b');
-	$result = $query->fields('b')->condition('b.status', 1)->orderBy('b.region')->orderBy('b.weight')->orderBy('b.module')->addTag('block_load')->addTag('translatable')->execute();
+  $query = db_select('block', 'b');
+  $result = $query->fields('b')->condition('b.status', 1)->orderBy('b.region')->orderBy('b.weight')->orderBy('b.module')->addTag('block_load')->addTag('translatable')->execute();
 
-	$block_info = $result->fetchAllAssoc('bid');
-	// Allow modules to modify the block list.
-	drupal_alter('block_list', $block_info); // TODO - ask Acquia folks whether it makes sense to honor this hook for this purpose?
+  $block_info = $result->fetchAllAssoc('bid');
+  // Allow modules to modify the block list.
+  drupal_alter('block_list', $block_info); // TODO - ask Acquia folks whether it makes sense to honor this hook for this purpose?
 
-	$blocks = array();
-	foreach ($block_info as $block) {
-		$blocks[$block->region]["{$block->module}_{$block->delta}"] = $block;
-	}
-	return $blocks;
+  $blocks = array();
+  foreach ($block_info as $block) {
+    $blocks[$block->region]["{$block->module}_{$block->delta}"] = $block;
+  }
+  return $blocks;
  }
 
