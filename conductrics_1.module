@@ -355,13 +355,15 @@ function conductrics_1_admin($form, &$form_state) {
 		'#title' => t('Pass value of token'),
 		'#default_value' => '',
 		'#size' => 30,
+		'#maxlength' => 100,
 		'#required' => FALSE,
 	  );
 	  $form['tokens']['add']['prefix'] = array(
 		'#type' => 'textfield',
 		'#title' => t('with prefix'),
 		'#default_value' => '',
-		'#size' => 30,
+		'#size' => 10,
+		'#maxlength' => 20,
 		'#required' => FALSE,
 	  );
 
@@ -389,10 +391,11 @@ function conductrics_1_admin($form, &$form_state) {
 		  $form['tokens']['existing']['tokens'] = array(
 		  	'#type' => 'tableselect',
 	  		'#options' => $options,
+	  		'#attributes' => array('style' => array('max-width:700px')),
 	  		'#hidden' => count($options) == 0,
 		  	'#header' => array(
-		  		'token' => t('Token'),
-		  		'prefix' => t('Prefix'),
+		  		'token' => array( 'data' => t('Existing Token'), 'width' => '70%' ),
+		  		'prefix' => array( 'data' => t('Prefix'), 'width' => '30%' ),
 		  	),
 		  );
 
