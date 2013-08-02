@@ -454,7 +454,10 @@ function conductrics_1_preprocess_html(&$variables) {
         if (!empty($token_value) && $token_value != $token_code) { // the token as a value
           $prefix_with = empty($token_item['prefix']) ? '' : ($token_item['prefix'] . '-'); // The 'prefix' at this level is a cheap way to namespace the values that get returned by the tokens
           foreach ( explode(',', $token_value) as $part) { // we might have a comma-separated list of values, as in "Football, Baseball, Soccer"
-            array_push($features, $prefix_with . trim($part));
+            $feature_value = $prefix_with . trim($part);
+            if (conductrics_1_code_valid($feature_value)) {
+              array_push($features, $feature_value);
+            }
           }
         }
       }
@@ -496,7 +499,7 @@ function conductrics_1_ajax_add_goal($form, &$form_state) {
   $goal_mode = $form_state['values']['goals']['add']['goal_mode'];
   $value = $form_state['values']['goals']['add']['value'];
   $urls = $form_state['values']['goals']['add']['urls'];
-  $valid = !empty($goal_code) && !empty($goal_mode) && is_numeric($value) && !empty($urls);
+  $valid = !empty($goal_code) && conductrics_1_code_valid($goal_code) && !empty($goal_mode) && is_numeric($value) && !empty($urls);
   if ($valid) {
     $form_state['goals'][$goal_code] = array(
       'goal_mode' => $goal_mode,
@@ -514,7 +517,7 @@ function conductrics_1_ajax_add_goal_callback($form, $form_state) {
 function conductrics_1_ajax_add_token($form, &$form_state) {
   $token_code = $form_state['values']['tokens']['add']['token'];
   $prefix = $form_state['values']['tokens']['add']['prefix'];
-  $valid = !empty($token_code); // TODO - validate properly
+  $valid = !empty($token_code) && conductrics_1_code_valid($prefix); // TODO - validate token_code properly
   if ($valid) {
     $form_state['tokens'][$token_code] = array(
       'prefix' => $prefix,
