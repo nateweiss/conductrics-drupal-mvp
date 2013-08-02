@@ -247,85 +247,94 @@ function conductrics_1_admin($form, &$form_state) {
   $form['goals']['msg'] = array(
     '#markup' => t("<p>You should specify at least one page that should be considered a 'Goal' for your site.</p>"),
   );
-  if (empty($form_state['goal_codes'])) {
-    $form_state['goal_codes'] = array_keys($goals);
+  if (!isset($form_state['goals'])) {
+    $form_state['goals'] = conductrics_1_goals_get();
   }
-
-  foreach ($form_state['goal_codes'] as $goal_code) {
-    if ( isset($form_state['values']["remove_$goal_code"]) ) {
-      conductrics_1_goal_remove($goal_code);
-      continue;
-    }
-
-    if (isset($goals[$goal_code])) {
-      $goal = $goals[$goal_code];
-    } else {
-      $goal = array(
-        'urls' => array('*'),
-      );
-    }
-
-    $form['goals'][$goal_code] = array(
-      '#type' => 'fieldset',
-      '#attributes' => array('class' => array('container-inline')),
-    );
-    $form['goals'][$goal_code]['goal_code'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Goal'),
-      '#default_value' => $goal_code,
-      '#size' => 8,
-      '#maxlength' => 50,
-      '#disabled' => isset($goals[$goal_code]),
-      '#required' => TRUE,
-    );
-    $form['goals'][$goal_code]['value'] = array(
-      '#type' => 'textfield',
-      '#title' => t('valued at'),
-      '#default_value' => isset($goal['value']) ? $goal['value'] : 1,
-      '#size' => 2,
-      '#required' => TRUE,
-    );
-    $form['goals'][$goal_code]['goal_mode'] = array(
-      '#type' => 'select',
-      '#default_value' => $goal['goal_mode'],
-      '#title' => 'occurs',
-      '#options' => array(
-        'page-load' => "on page load",
-      ),
-      '#default_value' => 'page-load',
-      '#required' => TRUE,
-    );
-    $form['goals'][$goal_code]['urls'] = array(
-      '#type' => 'textfield',
-      '#title' => t('if alias matches'),
-      '#default_value' => implode(',', $goal['urls']), // TODO better to provide multiple patterns - for now assume commas separate patterns
-      '#size' => 20,
-      '#maxlength' => 500,
-      '#required' => TRUE,
-    );
-    $form['goals'][$goal_code]['remove'] = array(
-      '#type' => 'button',
-      '#value' => t('x'),
-      '#name' => "remove_$goal_code",
-    );
-  }
-
-  $form['goals']['msg_2'] = array(
-    '#markup' => t("<p>You can use <code>*</code> as a wildcard, such as <code>/content/special/*</code> if the business goal for your site were to get users to view pages in the 'special' section.</p>"),
+  $form['goals']['add'] = array(
+    '#type' => 'fieldset',
+    '#attributes' => array('class' => array('container-inline')),
   );
-
-  $form['goals']['add_goal'] = array(
+  $form['goals']['add']['goal_code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Goal'),
+    '#default_value' => '',
+    '#size' => 8,
+    '#maxlength' => 50,
+  );
+  $form['goals']['add']['value'] = array(
+    '#type' => 'textfield',
+    '#title' => t('valued at'),
+    '#default_value' => 1,
+    '#size' => 2,
+  );
+  $form['goals']['add']['goal_mode'] = array(
+    '#type' => 'select',
+    '#title' => 'occurs',
+    '#options' => array(
+      'page-load' => "on page load",
+    ),
+    '#default_value' => 'page-load',
+  );
+  $form['goals']['add']['urls'] = array(
+    '#type' => 'textfield',
+    '#title' => t('if alias matches'),
+    '#default_value' => '*', // TODO better to provide multiple patterns - for now assume commas separate patterns
+    '#size' => 20,
+    '#maxlength' => 500,
+  );
+  $form['goals']['add']['btn'] = array(
     '#type' => 'submit',
-    '#value' => t('Add Another Goal'),
-    '#submit' => array('conductrics_1_ajax_add_goal'),
+    '#value' => t('Add Rule'),
     // See the examples in ajax_example.module for more details on the
     // properties of #ajax.
     '#attributes' => array('style' => 'margin-bottom:10px'),
+    '#submit' => array('conductrics_1_ajax_add_goal'),
     '#ajax' => array(
       'callback' => 'conductrics_1_ajax_add_goal_callback',
       'wrapper' => 'conductrics_ajax_goals_wrapper',
     ),
   );
+
+  $form['goals']['msg_2'] = array(
+    '#markup' => t("<p>You can use <code>*</code> as a wildcard, such as <code>/content/special/*</code> if the business goal for your site were to get users to view pages in the 'special' section.</p>"),
+  );
+
+  if ( count($form_state['goals']) > 0) {
+    $options = array_merge(array(), $form_state['goals']);
+    foreach ($options as $code => &$value) {
+      $value['goal_code'] = $code;
+      $value['urls'] = implode(',', $value['urls']);
+    }
+    $form['goals']['existing']['goals'] = array(
+      '#type' => 'tableselect',
+      '#js_select' => FALSE,
+      '#options' => $options,
+      '#attributes' => array('style' => array('max-width:700px')),
+      '#hidden' => count($options) == 0,
+      '#header' => array(
+        'goal_code' => array( 'data' => t('Goal'), 'width' => '30%' ),
+        'value' => array( 'data' => t('Value'), 'width' => '30%' ),
+        'goal_mode' => array( 'data' => t('Occurs'), 'width' => '30%' ),
+        'urls' => array( 'data' => t('URL'), 'width' => '30%' ),
+      ),
+    );
+
+    $form['goals']['existing']['btn'] = array(
+      '#type' => 'submit',
+      '#name' => 'goal_remove',
+      '#value' => t('Remove Selected'),
+      // See the examples in ajax_example.module for more details on the
+      // properties of #ajax.
+      '#attributes' => array('style' => 'margin-bottom:10px'),
+      '#submit' => array('conductrics_1_ajax_remove_goal'),
+      '#ajax' => array(
+        'callback' => 'conductrics_1_ajax_remove_goal_callback',
+        'wrapper' => 'conductrics_ajax_goals_wrapper',
+      ),
+    );
+  }
+
+
 
   /* TOKENS */
   if (!isset($form_state['tokens'])) {
@@ -363,9 +372,8 @@ function conductrics_1_admin($form, &$form_state) {
     '#maxlength' => 20,
     '#required' => FALSE,
   );
-
   $form['tokens']['add']['btn'] = array(
-    '#type' => 'submit',
+    '#type' => 'button',
     '#value' => t('Add'),
     '#submit' => array('conductrics_1_ajax_add_token'),
     // See the examples in ajax_example.module for more details on the
@@ -384,6 +392,7 @@ function conductrics_1_admin($form, &$form_state) {
     }
     $form['tokens']['existing']['tokens'] = array(
       '#type' => 'tableselect',
+      '#js_select' => FALSE,
       '#options' => $options,
       '#attributes' => array('style' => array('max-width:700px')),
       '#hidden' => count($options) == 0,
@@ -395,11 +404,12 @@ function conductrics_1_admin($form, &$form_state) {
 
     $form['tokens']['existing']['btn'] = array(
       '#type' => 'submit',
+      '#name' => 'token_remove',
       '#value' => t('Remove Selected'),
-      '#submit' => array('conductrics_1_ajax_remove_token'),
       // See the examples in ajax_example.module for more details on the
       // properties of #ajax.
       '#attributes' => array('style' => 'margin-bottom:10px'),
+      '#submit' => array('conductrics_1_ajax_remove_token'),
       '#ajax' => array(
         'callback' => 'conductrics_1_ajax_remove_token_callback',
         'wrapper' => 'conductrics_ajax_tokens_wrapper',
@@ -502,10 +512,19 @@ function conductrics_1_admin_submit($form, &$form_state) {
 }
 
 function conductrics_1_ajax_add_goal($form, &$form_state) {
-  $num = count($form_state['goal_codes']) + 1;
-  $goal_code = "goal-$num";
-  array_push($form_state['goal_codes'], $goal_code);
-  $form_state['rebuild'] = TRUE;
+  $goal_code = $form_state['values']['goals']['add']['goal_code'];
+  $goal_mode = $form_state['values']['goals']['add']['goal_mode'];
+  $value = $form_state['values']['goals']['add']['value'];
+  $urls = $form_state['values']['goals']['add']['urls'];
+  $valid = !empty($goal_code) && !empty($goal_mode) && is_numeric($value) && !empty($urls);
+  if ($valid) {
+    $form_state['goals'][$goal_code] = array(
+      'goal_mode' => $goal_mode,
+      'value' => $value,
+      'urls' => explode(',', $urls),
+    );
+    $form_state['rebuild'] = TRUE;
+  }
 }
 function conductrics_1_ajax_add_goal_callback($form, $form_state) {
   return $form['goals'];
@@ -516,12 +535,10 @@ function conductrics_1_ajax_add_token($form, &$form_state) {
   $prefix = $form_state['values']['tokens']['add']['prefix'];
   $valid = !empty($token_code); // TODO - validate properly
   if ($valid) {
-  $form_state['tokens'][$token_code] = array(
-    'prefix' => $prefix,
-  );
-  $form_state['values']['tokens']['add']['token'] = '';
-  $form_state['values']['tokens']['add']['prefix'] = '';
-  $form_state['rebuild'] = TRUE;
+    $form_state['tokens'][$token_code] = array(
+      'prefix' => $prefix,
+    );
+    $form_state['rebuild'] = TRUE;
   }
 }
 function conductrics_1_ajax_add_token_callback($form, $form_state) {
@@ -537,6 +554,17 @@ function conductrics_1_ajax_remove_token($form, &$form_state) {
 }
 function conductrics_1_ajax_remove_token_callback($form, $form_state) {
   return $form['tokens'];
+}
+function conductrics_1_ajax_remove_goal($form, &$form_state) {
+  foreach ($form_state['values']['goals']['existing']['goals'] as $goal_code => $value) {
+    if ($goal_code == $value) {
+      unset($form_state['goals'][$goal_code]);
+      $form_state['rebuild'] = TRUE;
+    }
+  }
+}
+function conductrics_1_ajax_remove_goal_callback($form, $form_state) {
+  return $form['goals'];
 }
 
 function conductrics_1_goals_get() {
