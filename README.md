@@ -87,7 +87,7 @@ At page view time, the theme function renders this data like so in the page mark
 <div data-conductrics-agent="my-agent" data-conductrics-choice="block-1">
 	...first block's content...
 </div>
-<div data-conductrics-agent="my-agent" data-conductrics-choice="block-1">
+<div data-conductrics-agent="my-agent" data-conductrics-choice="block-2">
 	...second block's content...
 </div>
 ```
