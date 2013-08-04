@@ -1,8 +1,9 @@
 <?php
 /**
 * @file
-* Tweet block bean plugin.
 */
+module_load_include('inc', 'conductrics_1', 'conductrics_1_data_access'); // helper functions for getting/setting data about agents, goals, etc
+
 class ConductricsBlockBean extends BeanPlugin {
 	/**
 	* Declares default block settings.
