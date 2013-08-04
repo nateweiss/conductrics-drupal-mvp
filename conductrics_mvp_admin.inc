@@ -4,9 +4,9 @@
 * Global-level configuration form and supporting logic for the Conductrics module
 */
 
-module_load_include('inc', 'conductrics_1', 'conductrics_1_data_access'); // helper functions for getting/setting data about agents, goals, etc
+module_load_include('inc', 'conductrics_mvp', 'conductrics_mvp_data_access'); // helper functions for getting/setting data about agents, goals, etc
 
-function conductrics_1_admin($form, &$form_state) {
+function conductrics_mvp_admin($form, &$form_state) {
   $account_info = variable_get('conductrics_account_info');
   $account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
 
@@ -82,7 +82,7 @@ function conductrics_1_admin($form, &$form_state) {
     '#required' => FALSE,
   );
 
-  $goals = conductrics_1_goals_get();
+  $goals = conductrics_mvp_goals_get();
   $form['goals'] = array(
     '#type' => 'fieldset',
     '#title' => 'Goals',
@@ -95,7 +95,7 @@ function conductrics_1_admin($form, &$form_state) {
     '#markup' => t("<p>You should specify at least one page that should be considered a 'Goal' for your site.</p>"),
   );
   if (!isset($form_state['goals'])) {
-    $form_state['goals'] = conductrics_1_goals_get();
+    $form_state['goals'] = conductrics_mvp_goals_get();
   }
   $form['goals']['add'] = array(
     '#type' => 'fieldset',
@@ -135,9 +135,9 @@ function conductrics_1_admin($form, &$form_state) {
     // See the examples in ajax_example.module for more details on the
     // properties of #ajax.
     '#attributes' => array('style' => 'margin-bottom:10px'),
-    '#submit' => array('conductrics_1_ajax_add_goal'),
+    '#submit' => array('conductrics_mvp_ajax_add_goal'),
     '#ajax' => array(
-      'callback' => 'conductrics_1_ajax_add_goal_callback',
+      'callback' => 'conductrics_mvp_ajax_add_goal_callback',
       'wrapper' => 'conductrics_ajax_goals_wrapper',
     ),
   );
@@ -171,9 +171,9 @@ function conductrics_1_admin($form, &$form_state) {
     // See the examples in ajax_example.module for more details on the
     // properties of #ajax.
     '#attributes' => array('style' => 'margin-bottom:10px'),
-    '#submit' => array('conductrics_1_ajax_remove_goal'),
+    '#submit' => array('conductrics_mvp_ajax_remove_goal'),
     '#ajax' => array(
-      'callback' => 'conductrics_1_ajax_remove_goal_callback',
+      'callback' => 'conductrics_mvp_ajax_remove_goal_callback',
       'wrapper' => 'conductrics_ajax_goals_wrapper',
     ),
   );
@@ -221,9 +221,9 @@ function conductrics_1_admin($form, &$form_state) {
     // See the examples in ajax_example.module for more details on the
     // properties of #ajax.
     '#attributes' => array('style' => 'margin-bottom:10px'),
-    '#submit' => array('conductrics_1_ajax_add_token'),
+    '#submit' => array('conductrics_mvp_ajax_add_token'),
     '#ajax' => array(
-      'callback' => 'conductrics_1_ajax_add_token_callback',
+      'callback' => 'conductrics_mvp_ajax_add_token_callback',
       'wrapper' => 'conductrics_ajax_tokens_wrapper',
     ),
   );
@@ -252,9 +252,9 @@ function conductrics_1_admin($form, &$form_state) {
       // See the examples in ajax_example.module for more details on the
       // properties of #ajax.
       '#attributes' => array('style' => 'margin-bottom:10px'),
-      '#submit' => array('conductrics_1_ajax_remove_token'),
+      '#submit' => array('conductrics_mvp_ajax_remove_token'),
       '#ajax' => array(
-        'callback' => 'conductrics_1_ajax_remove_token_callback',
+        'callback' => 'conductrics_mvp_ajax_remove_token_callback',
         'wrapper' => 'conductrics_ajax_tokens_wrapper',
       ),
     );
@@ -269,12 +269,12 @@ function conductrics_1_admin($form, &$form_state) {
 
   return $form;
 }
-function conductrics_1_admin_validate($form, &$form_state) {
-  if (!conductrics_1_code_valid($form_state['values']['conductrics_owner_code'])) {
+function conductrics_mvp_admin_validate($form, &$form_state) {
+  if (!conductrics_mvp_code_valid($form_state['values']['conductrics_owner_code'])) {
     form_set_error('conductrics_owner_code', "Invalid owner code");
   }
 }
-function conductrics_1_admin_submit($form, &$form_state) {
+function conductrics_mvp_admin_submit($form, &$form_state) {
   $account_info = array(
     'owner_code' => $form_state['values']['conductrics_owner_code'],
     'api_key' => $form_state['values']['conductrics_api_key'],
@@ -286,21 +286,21 @@ function conductrics_1_admin_submit($form, &$form_state) {
   variable_set('conductrics_account_info', $account_info);
 
   foreach ($form_state['goals'] as $goal_code => $value) {
-    conductrics_1_goal_update($goal_code, $value);
+    conductrics_mvp_goal_update($goal_code, $value);
   }
-  foreach (conductrics_1_goals_get() as $goal_code => $value) {
+  foreach (conductrics_mvp_goals_get() as $goal_code => $value) {
     if (!isset($form_state['goals'][$goal_code])) {
-      conductrics_1_goal_remove($goal_code);
+      conductrics_mvp_goal_remove($goal_code);
     }
   }
 }
 // Process form gesture to add a goal.
-function conductrics_1_ajax_add_goal($form, &$form_state) {
+function conductrics_mvp_ajax_add_goal($form, &$form_state) {
   $goal_code = $form_state['values']['goals']['add']['goal_code'];
   $goal_mode = $form_state['values']['goals']['add']['goal_mode'];
   $value = $form_state['values']['goals']['add']['value'];
   $urls = $form_state['values']['goals']['add']['urls'];
-  $valid = !empty($goal_code) && conductrics_1_code_valid($goal_code) && !empty($goal_mode) && is_numeric($value) && !empty($urls);
+  $valid = !empty($goal_code) && conductrics_mvp_code_valid($goal_code) && !empty($goal_mode) && is_numeric($value) && !empty($urls);
   if ($valid) {
     $form_state['goals'][$goal_code] = array(
       'goal_mode' => $goal_mode,
@@ -310,11 +310,11 @@ function conductrics_1_ajax_add_goal($form, &$form_state) {
     $form_state['rebuild'] = TRUE;
   }
 }
-function conductrics_1_ajax_add_goal_callback($form, $form_state) {
+function conductrics_mvp_ajax_add_goal_callback($form, $form_state) {
   return $form['goals'];
 }
 // Process form gesture to remove a goal.
-function conductrics_1_ajax_remove_goal($form, &$form_state) {
+function conductrics_mvp_ajax_remove_goal($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
   foreach ($form_state['values']['goals']['existing']['goals'] as $code => $value) {
     if ($value == TRUE) {
@@ -323,14 +323,14 @@ function conductrics_1_ajax_remove_goal($form, &$form_state) {
     }
   }
 }
-function conductrics_1_ajax_remove_goal_callback($form, $form_state) {
+function conductrics_mvp_ajax_remove_goal_callback($form, $form_state) {
   return $form['goals'];
 }
 // Process form gesture to add a token.
-function conductrics_1_ajax_add_token($form, &$form_state) {
+function conductrics_mvp_ajax_add_token($form, &$form_state) {
   $token_code = $form_state['values']['tokens']['add']['token'];
   $prefix = $form_state['values']['tokens']['add']['prefix'];
-  $valid = !empty($token_code) && conductrics_1_code_valid($prefix); // TODO - validate token_code properly
+  $valid = !empty($token_code) && conductrics_mvp_code_valid($prefix); // TODO - validate token_code properly
   if ($valid) {
     $form_state['tokens'][$token_code] = array(
       'prefix' => $prefix,
@@ -338,11 +338,11 @@ function conductrics_1_ajax_add_token($form, &$form_state) {
     $form_state['rebuild'] = TRUE;
   }
 }
-function conductrics_1_ajax_add_token_callback($form, $form_state) {
+function conductrics_mvp_ajax_add_token_callback($form, $form_state) {
   return $form['tokens'];
 }
 // Process form gesture to remove a token.
-function conductrics_1_ajax_remove_token($form, &$form_state) {
+function conductrics_mvp_ajax_remove_token($form, &$form_state) {
   foreach ($form_state['values']['tokens']['existing']['tokens'] as $token_code => $value) {
     if ($token_code == $value) {
       unset($form_state['tokens'][$value]);
@@ -350,7 +350,7 @@ function conductrics_1_ajax_remove_token($form, &$form_state) {
     }
   }
 }
-function conductrics_1_ajax_remove_token_callback($form, $form_state) {
+function conductrics_mvp_ajax_remove_token_callback($form, $form_state) {
   return $form['tokens'];
 }
 

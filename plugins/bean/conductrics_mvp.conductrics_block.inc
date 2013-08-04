@@ -2,7 +2,7 @@
 /**
 * @file
 */
-module_load_include('inc', 'conductrics_1', 'conductrics_1_data_access'); // helper functions for getting/setting data about agents, goals, etc
+module_load_include('inc', 'conductrics_mvp', 'conductrics_mvp_data_access'); // helper functions for getting/setting data about agents, goals, etc
 
 class ConductricsBlockBean extends BeanPlugin {
 	/**
@@ -48,7 +48,7 @@ class ConductricsBlockBean extends BeanPlugin {
 			),
 		);
 
-		$default_value = isset($bean->experiences['block-visible']['blocks'][0]) ? conductrics_1_block_data_to_str($bean->experiences['block-visible']['blocks'][0]) : '';
+		$default_value = isset($bean->experiences['block-visible']['blocks'][0]) ? conductrics_mvp_block_data_to_str($bean->experiences['block-visible']['blocks'][0]) : '';
 		$form['block_vis']['block'] = array(
 			'#type' => 'textfield',
 			'#title' => t("Block"),
@@ -76,7 +76,7 @@ class ConductricsBlockBean extends BeanPlugin {
 
 		for ($num = 1; $num <= $num_blocks; $num++) {
 			$is_required = ($num <= 2);
-			$default_value = isset($bean->experiences["block-$num"]['blocks'][0]) ? conductrics_1_block_data_to_str($bean->experiences["block-$num"]['blocks'][0]) : '';
+			$default_value = isset($bean->experiences["block-$num"]['blocks'][0]) ? conductrics_mvp_block_data_to_str($bean->experiences["block-$num"]['blocks'][0]) : '';
 			$form['block_swap']["block_$num"] = array(
 				'#type' => 'textfield',
 				'#title' => t("Block $num"),
@@ -102,7 +102,7 @@ class ConductricsBlockBean extends BeanPlugin {
 
 
 		$goal_options = array();
-		$goal_items = conductrics_1_goals_get();
+		$goal_items = conductrics_mvp_goals_get();
 		$goals_selected = array();
 		foreach ($goal_items as $goal_code => $goal_item) {
 			if (!isset($goal_item['agents'])) {
@@ -138,7 +138,7 @@ class ConductricsBlockBean extends BeanPlugin {
 		}
 		if ( $values['selection_mode'] == 'block-vis' ) {
 			$val = $values['block_vis']['block'];
-			if ( !conductrics_1_block_str_valid($val) ) {
+			if ( !conductrics_mvp_block_str_valid($val) ) {
 				form_set_error($values['block_vis']['block'], t("You need to select a Block to show or hide."));
 			}
 		}
@@ -150,12 +150,12 @@ class ConductricsBlockBean extends BeanPlugin {
 					form_set_error("block_swap][block_$num", t('You must provide at least two blocks to select from.'));
 					continue;
 				}
-				if ( !empty($val) && !conductrics_1_block_str_valid($val) ) {
+				if ( !empty($val) && !conductrics_mvp_block_str_valid($val) ) {
 					form_set_error("block_swap][block_$num", t("Invalid Block $num provided - please choose from one of the available blocks." . $val));
 				}
 			}
 		}
-		if ( !conductrics_1_code_valid($values['agent_code']) ) {
+		if ( !conductrics_mvp_code_valid($values['agent_code']) ) {
 			form_set_error('agent_code', t('Invalid Agent Code - you can use letters, numbers, dashes, and underscores, but no spaces or other special characters.'));
 		}
 	}

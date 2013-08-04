@@ -2,7 +2,7 @@
 
 ## GETTING SET UP
 
-1. Install this module. Note that the module is called "conductrics_1" at this time (actual module name tbd).
+1. Install this module. Note that the module is called "conductrics_mvp" at this time (actual module name tbd).
 2. Get a Conductrics account via "Get Access" link at www.conductrics.com
 3. Goto Admin > Configuration > Conductrics (under Content Authoring)
 4. Provide your Owner Code, Runtime API Key, and Admin API key from your Conductrics account.
