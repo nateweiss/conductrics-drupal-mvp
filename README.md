@@ -78,7 +78,8 @@ array(
 			'delta' => 'my-block-b',
 		),
 	),
-)```
+)
+```
 
 At page view time, the theme function renders this data like so in the page markup:
 
