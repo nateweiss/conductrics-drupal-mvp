@@ -1,5 +1,5 @@
-GETTING SET UP
-================
+# GETTING SET UP
+
 1. Install this module.
 2. Get a Conductrics account via "Get Access" link at www.conductrics.com
 3. Goto Admin > Configuration > Conductrics (under Content Authoring)
@@ -9,7 +9,7 @@ GETTING SET UP
    By default, there will be one set up that considers any page view to be a "success event". You can use this at first while getting familiar with the module, but at some point you should make sure that only those pages that are important to you as conceptual "conversions" are considered to be goals.
    In the future, there will be support for click, hover, and other interaction events as well as page-load type events.
 
-CREATING A TEST or OPTIMIZATION
+# CREATING A TEST or OPTIMIZATION
 ===============================
 1. Create blocks that display the content variations that you want Conductrics to test out or select dynamically.
 2. Create a new Conductrics block via Admin > Content > Blocks > Add Block > Conductrics Selection.
