@@ -12,7 +12,7 @@ The current implementation stores a small amount of information within Drupal, a
 
 1. Install this module. Note that the module is called "conductrics_mvp" at this time (actual module name tbd).
 2. Get a Conductrics account via "Get Access" link at www.conductrics.com
-3. Goto Admin > Configuration > Conductrics (under Content Authoring)
+3. Go to Admin > Configuration > Conductrics (under Content Authoring).
 4. Provide your Owner Code, Runtime API Key, and Admin API key from your Conductrics account.
    (the Admin Key is not actually used at this time, but will in later versions of this plugin)
 5. Specify one or more goal pages.
@@ -26,6 +26,27 @@ The current implementation stores a small amount of information within Drupal, a
 3. Choose the "Block Selection" option, then specify the blocks with your content variations as Block 1, Block 2, etc. Start typing the name of the block, then select it from the autocomplete list (better UI for this step will be forthcoming).
 4. For Conductrics Agent Code, make up a "machine name" style name for your test or optimization, such as 'hero-image-test' or 'call-to-action' or whatever makes sense. You do not need to have created the agent first in Conductrics.
 5. Select one or more of the goal events you created while getting set up initially.
+
+### Targeting
+
+#### Targeting with information you have in Drupal
+
+You also pass certain profile data about the visitor that you have in Drupal, to Conductrics.
+
+Let's say you have a custom profile field called "sport", with values such as "baseball", "football" and so on. You can tell Drupal to pass the value of the field (when available for the visitor) to Conductric as targeting "features". Conductrics will keep track of which content options work best for the people with the "football" feature versus the "baseball" feature and so on. As it learns which options perform best for the different visitor features, it is able to target more and more accurately in real time.
+
+To pass profile data to Conductrics:
+1. Go to Admin > Configuration > Conductrics (under Content Authoring).
+2. Under Tokens for Targeting, provide the token for the field you want to pass. User profile fields are available using the format `[current-user:field-xxx]`, where xxx is the machine name for the field (so, something like `[current-user:field-sport]`). In the future there will likely be a better way to provide the token for the field you want--for now just type it manually.
+3. Provide a prefix for the token, which will appear before the value to keep things organized. For instance, if you provide "sport" as the prefix, then on the Conductrics side your features might be called "sport-baseball", "sport-football" and so on.
+
+IMPORTANT - It doesn't make sense to use tokens that would pass information that isn't generalizable from visitor to visitor. So, don't provide tokens for visitor information such as the visitor's email address or unique id, or the current time and so on. If a value isn't likely to be present on many different user profiles over time, it isn't of much use to Conductrics and shouldn't be passed along.
+
+#### Targeting with information supplied by Conductrics
+
+You can set up targeting rules in the Conductrics Console to automatically "tag" your visitors with features based on their geo-location, type of browser, time of day (morning versus evening, or weekday versus weekend, etc), and more.
+
+You don't have to do anything in the Drupal Admin to enable the Conductrics-supplied targeting. Just go straight to your Conductrics account to enable the targeting that makes sense for you. See http://console.conductrics.com/docs/home/targeting-rules for details.
 
 ### Viewing Reports
 
