@@ -219,6 +219,12 @@ function conductrics_mvp_admin($form, &$form_state) {
     '#maxlength' => 100,
     '#required' => FALSE,
   );
+
+  $form['tokens']['add']['token_tree'] = array(
+    '#theme' => 'token_tree_link',
+    '#text' => '[ ... ]',
+  );
+
   $form['tokens']['add']['prefix'] = array(
     '#type' => 'textfield',
     '#title' => t('with prefix'),
