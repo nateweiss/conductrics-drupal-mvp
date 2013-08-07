@@ -167,6 +167,7 @@ function conductrics_mvp_admin($form, &$form_state) {
     '#options' => $options,
     '#attributes' => array('style' => array('max-width:700px')),
     '#hidden' => count($options) == 0,
+    '#empty' => 'No goals specified yet.',
     '#header' => array(
       'goal_code' => array( 'data' => t('Goal'), 'width' => '30%' ),
       'value' => array( 'data' => t('Value'), 'width' => '30%' ),
