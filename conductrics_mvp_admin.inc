@@ -10,6 +10,14 @@ function conductrics_mvp_admin($form, &$form_state) {
   $account_info = variable_get('conductrics_account_info');
   $account_info_provided = !empty($account_info['owner_code']) && !empty($account_info['api_key']);
 
+  $path = drupal_get_path('module', 'conductrics_mvp') . '/assets';
+  $form['#attached'] = array(
+    'css' => array(
+      'type' => 'file',
+      'data' => $path . '/conductrics-admin.css',
+    ),
+  );
+
   $form['account'] = array(
     '#type' => 'fieldset',
     '#title' => 'Conductrics Account Settings',
@@ -99,7 +107,9 @@ function conductrics_mvp_admin($form, &$form_state) {
   }
   $form['goals']['add'] = array(
     '#type' => 'fieldset',
-    '#attributes' => array('class' => array('container-inline')),
+    '#attributes' => array(
+      'class' => array('container-inline container-inline-inset'),
+    ),
   );
   $form['goals']['add']['goal_code'] = array(
     '#type' => 'textfield',
@@ -195,7 +205,10 @@ function conductrics_mvp_admin($form, &$form_state) {
 
   $form['tokens']['add'] = array(
     '#type' => 'fieldset',
-    '#attributes' => array('class' => array('container-inline')),
+    '#attributes' => array(
+      'class' => array('container-inline'),
+      'style' => 'border: thin solid #efefef; border-radius:4px; display:inline; background-color: #efefef; padding-top:10px;',
+    ),
   );
 
   $form['tokens']['add']['token'] = array(

@@ -25,7 +25,3 @@ function theme_agent_experience_block(&$variables) {
 	$block = _block_get_renderable_array(_block_render_blocks(array($block_info)));
 	return render($block);
 }
-
-function theme_preprocess_page(&$vars, $hook) {
-	drupal_add_js(drupal_get_path('theme', 'mytheme') . '/mytheme.js');
-}
