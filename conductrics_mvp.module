@@ -22,9 +22,9 @@ function conductrics_mvp_bean_types_api_info() {
 function conductrics_mvp_init() {
   if (!path_is_admin(current_path())) { // TODO - should we not have the check for path_is_admin here, perhaps interferes with css/js preprocessing
     $path = drupal_get_path('module', 'conductrics_mvp') . '/assets';
-    drupal_add_css($path.'/conductrics-experience.css', array('scope' => 'header') ); // include css before js (point is to avoid 'flicker')
-    drupal_add_js($path .'/conductrics.jquery.js', array('scope' => 'header') ); // see https://github.com/conductrics/conductrics-jquery
-    drupal_add_js($path .'/conductrics-experience.js', array('scope' => 'footer')); // relies on conductrics.jquery
+    drupal_add_css($path.'/conductrics-experience.css', array('scope' => 'header') ); // hide things being experimented on at first to avoid "flicker" - VERY short CSS file, should it be inline?
+    drupal_add_js($path .'/conductrics.jquery.js', array('scope' => 'header') ); // Conductrics jQuery plugin - see https://github.com/conductrics/conductrics-jquery
+    drupal_add_js($path .'/conductrics-experience.js', array('scope' => 'footer')); // invoke 'autowire' method from Conductrics jQuery plugin
     // Pass account info to JS so that jQuery plugin can talk to Conductrics
     $account_info = variable_get('conductrics_account_info');
     $conductrics_jquery_options = array(
