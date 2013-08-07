@@ -74,7 +74,7 @@ To handle such a use case, follow the instructions for creating the test or opti
 - Automatically generate agent code based on block label ('machine name' style)
 - Improved UI / workflow and validation
 - Documentation and guidance around passing of user tokens to Conductrics as targeting features (so user doesn't unwittingly provide token data that is inherently to "unique" to be helpful to Conductrics)
-- "Pick tree" for selecting user tokens for passing as targeting features
+- ~~"Pick tree" for selecting user tokens for passing as targeting features~~ (done)
 - Embedded reports
 - Documentation and guidance for themers
 
