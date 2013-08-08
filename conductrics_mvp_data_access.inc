@@ -8,7 +8,7 @@ function conductrics_mvp_goals_get() {
   $goals = variable_get('conductrics_goals');
   if (!isset($goals) || count($goals) == 0) {
     $goals = array(
-      'any-page' => array(
+      'goal-1' => array(
         'agents' => array(),
         'goal_mode' => 'page-load',
         'urls' => array('*'),
