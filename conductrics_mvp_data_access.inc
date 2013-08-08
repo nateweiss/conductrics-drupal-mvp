@@ -72,6 +72,28 @@ function conductrics_mvp_get_goals_relevant_here($path) {
     return $relevant_here;
 }
 
+function conductrics_mvp_get_feature_values_for_visitor() {
+  // Which features, if any, should be specified in 'data-conductrics-features' attribute of the page's body element?
+  $features = array(); // will be an array of feature codes to pass to conductrics
+  $account_info = variable_get('conductrics_account_info');
+  if (isset($account_info['tokens'])) {
+    foreach ($account_info['tokens'] as $token_code => $token_item) { // for each token that has been configured as passable to Conductrics
+      // assume $token_code is a string in normal Drupal-style token format, for example: '[current-user:field-sport]'
+      $token_value = token_replace($token_code); // will now be the value of the token, or the value of $token_code if no replacement took place (unknown token)
+      if (!empty($token_value) && $token_value != $token_code) { // the token as a value
+        $prefix_with = empty($token_item['prefix']) ? '' : ($token_item['prefix'] . '-'); // The 'prefix' at this level is a cheap way to namespace the values that get returned by the tokens
+        foreach ( explode(',', $token_value) as $part) { // we might have a comma-separated list of values, as in "Football, Baseball, Soccer"
+          $feature_value = $prefix_with . trim($part);
+          if (conductrics_mvp_code_valid($feature_value)) {
+            array_push($features, $feature_value);
+          }
+        }
+      }
+    }
+  }
+  return $features;
+}
+
 function conductrics_mvp_blocks_matching($criteria) {
   $theme = 'demonstratie'; // TODO - pass in somehow
   $results = array();
