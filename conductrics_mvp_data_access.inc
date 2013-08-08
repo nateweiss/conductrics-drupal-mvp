@@ -57,6 +57,21 @@ function conductrics_mvp_goals_associate($agent_code, $goal_selections) {
   conductrics_mvp_goals_set($goals);
 }
 
+function conductrics_mvp_get_goals_relevant_here($path) {
+    $goals = conductrics_mvp_goals_get();
+    $relevant_here = array();
+    foreach ($goals as $goal_code => $goal_item) {
+      if ($goal_item['goal_mode'] == 'page-load') {
+        foreach ($goal_item['urls'] as $url) {
+          if ( fnmatch($url, $path) ) {
+            $relevant_here[$goal_code] = $goal_item;
+          }
+        }
+      }
+    }
+    return $relevant_here;
+}
+
 function conductrics_mvp_blocks_matching($criteria) {
   $theme = 'demonstratie'; // TODO - pass in somehow
   $results = array();

@@ -112,26 +112,19 @@ function conductrics_mvp_theme() {
 /**
  * Implements hook_preprocess_html().
  */
+
 function conductrics_mvp_preprocess_html(&$variables) {
   if (!path_is_admin(current_path())) {
-    $goals = conductrics_mvp_goals_get();
+    $goals = conductrics_mvp_get_goals_relevant_here(request_path());
     $goal_strs = array();
     foreach ($goals as $goal_code => $goal_item) {
-      $goal_relevant_here = false;
-      if ($goal_item['goal_mode'] == 'page-load') {
-        foreach ($goal_item['urls'] as $url) {
-          if ( fnmatch($url, request_path()) ) {
-            $goal_relevant_here = true;
-          }
-        }
-      }
-      if ($goal_relevant_here) {
-        foreach ($goal_item['agents'] as $agent_code) {
-          array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
-        }
+      foreach ($goal_item['agents'] as $agent_code) {
+        array_push($goal_strs, $agent_code .':'. $goal_code .':'. $goal_item['value']);
       }
     }
-    $variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
+    if ( count($goal_strs) > 0) {
+      $variables['attributes_array']['data-conductrics-reward-onload'] = implode(",", $goal_strs);
+    }
 
     // features
     $features = array(); // will be an array of feature codes to pass to conductrics
