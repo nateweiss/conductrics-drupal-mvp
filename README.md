@@ -62,6 +62,7 @@ To handle such a use case, follow the instructions for creating the test or opti
 
 ### TODOs, Questions, and Areas for Improvement
 
+- Right now, there is a hardcoded reference to the "demonstratie" theme (see the [demo framework](https://drupal.org/project/df)) which needs to be removed.
 - At this time, the relationship between each Conductrics "Agent" and its goals is stored as Drupal variables, but could be moved to a relational table.
 - Support N number of blocks in the bean's form (via "add another" button or similar), rather than a fixed limit of four.
 - Use the Admin Key to retrieve list of current agent codes, etc., from Conductrics server so that existing agents can be easily reused, etc.
